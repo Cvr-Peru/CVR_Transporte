@@ -1,0 +1,23 @@
+# Dependencias y artefactos de compilación
+node_modules/
+.next/
+out/
+
+# Base de datos local (se regenera con `npm run seed`)
+data/
+
+# Caché de npm usada en entornos con el sistema de archivos restringido
+.npm-cache/
+
+# Variables de entorno: nunca subir secretos al repositorio
+.env
+.env.local
+.env.*.local
+
+# Generado por Next.js
+next-env.d.ts
+*.tsbuildinfo
+
+# Varios
+*.log
+.DS_Store
