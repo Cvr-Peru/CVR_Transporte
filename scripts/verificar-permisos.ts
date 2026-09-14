@@ -43,6 +43,9 @@ const ESPERADO: Record<string, Record<Rol, boolean>> = {
   '/finanzas': { administracion: true, despachador: false, conductor: false, gerencia: true },
   '/facturacion': { administracion: true, despachador: false, conductor: false, gerencia: true },
   '/liquidaciones': { administracion: true, despachador: false, conductor: false, gerencia: true },
+  // Gestionar cuentas es solo de administración: quien puede crear un
+  // administrador puede hacerlo todo, así que no se delega.
+  '/usuarios': { administracion: true, despachador: false, conductor: false, gerencia: false },
 };
 
 function cookiesDe(respuesta: Response): string[] {

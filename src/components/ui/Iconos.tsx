@@ -192,3 +192,11 @@ export const IconoCamara = (p: PropsIcono) => (
     <circle cx="12" cy="12.5" r="3.4" />
   </Base>
 );
+
+/** Cuenta de usuario: gestión de accesos y roles. */
+export const IconoUsuario = (p: PropsIcono) => (
+  <Base {...p}>
+    <circle cx="12" cy="8" r="3.6" />
+    <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
+  </Base>
+);

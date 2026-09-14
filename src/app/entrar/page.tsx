@@ -104,7 +104,7 @@ export default async function PaginaEntrar({
                 required
                 autoComplete="username"
                 autoFocus
-                placeholder="tu@empresa.co"
+                placeholder="tucorreo@tuempresa.pe"
                 className={CLASE_CAMPO}
               />
             </label>

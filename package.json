@@ -19,6 +19,7 @@
     "verificar-permisos": "node scripts/verificar-permisos.ts",
     "verificar-mi-ruta": "node scripts/verificar-mi-ruta.ts",
     "verificar-pedidos": "node scripts/verificar-pedidos.ts",
+    "verificar-usuarios": "node scripts/verificar-usuarios.ts",
     "iconos": "node scripts/generar-iconos.ts",
     "typecheck": "tsc --noEmit"
   },

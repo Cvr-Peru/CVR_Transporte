@@ -52,6 +52,7 @@ está vacía, para no borrar los datos que ya haya (importante al desplegar).
 | **Costos y rentabilidad** | `/finanzas` | Combustible y rendimiento real por unidad, gastos por categoría, y margen por ruta y por unidad |
 | **Facturación** | `/facturacion` | Facturas, cartera, antigüedad de saldos y gestión de cobro |
 | **Liquidaciones** | `/liquidaciones` | Cálculo y pago de comisiones y salarios de los conductores |
+| **Usuarios y permisos** | `/usuarios` | Crear cuentas, asignarles rol, cambiar contraseñas, vincular un conductor con su ficha y quitar accesos. Solo la ve Administración |
 
 ### Lo que hace útil al prototipo
 
@@ -515,19 +516,39 @@ muchas veces registra entregas en nombre de un conductor que llamó por teléfon
 
 ### Crear y gestionar usuarios
 
+**Desde la aplicación**, en `/usuarios`, que solo ve el rol Administración. Es la pantalla
+para el día a día: crear la cuenta de un despachador o de un conductor, asignarle su rol,
+generar una contraseña, cambiarla cuando alguien la olvida, vincular una cuenta de conductor
+con su ficha de la plantilla y quitarle el acceso a quien ya no trabaja aquí.
+
+Dos decisiones que conviene conocer:
+
+- **No se borran cuentas, se desactivan.** Desactivar cierra todas sus sesiones en el acto y
+  consigue lo mismo, sin perder el rastro de quién registró cada pedido y quién subió cada foto
+  de entrega.
+- **Hay dos frenos** que impiden quedarse fuera de la propia aplicación: no puedes desactivar
+  tu propia cuenta, y no puedes rebajarte de rol si eres el último administrador activo. Sin
+  ellos, recuperarse exigiría entrar por consola al servidor, que es justo lo que esta pantalla
+  viene a evitar.
+
+En el servidor, para el primer administrador o para automatizar, sigue estando la terminal:
+
 ```bash
 # Crear (si omites la contraseña se genera una segura y se muestra una sola vez)
-npm run usuario -- crear jefe@miempresa.co "Ana Restrepo" administracion
+npm run usuario -- crear jefe@miempresa.pe "Ana Restrepo" administracion
 
 # Ver todos, con su rol, estado y sesiones abiertas
 npm run usuario -- listar
 
 # Cambiar la contraseña (cierra todas sus sesiones abiertas)
-npm run usuario -- clave jefe@miempresa.co
+npm run usuario -- clave jefe@miempresa.pe
 
 # Desactivar a alguien que sale de la empresa (cierra sus sesiones al instante)
-npm run usuario -- desactivar alguien@miempresa.co
+npm run usuario -- desactivar alguien@miempresa.pe
 ```
+
+En Railway, esos comandos se ejecutan contra la base de datos del servicio con
+`railway run npm run usuario -- …`.
 
 Roles disponibles: `administracion`, `despachador`, `conductor`, `gerencia`.
 
@@ -586,13 +607,15 @@ npm run verificar           # con el servidor arrancado: recorre todas las rutas
 npm run verificar-permisos  # cada rol entra exactamente donde le toca
 npm run verificar-mi-ruta   # el conductor entrega con foto, y no puede tocar lo ajeno
 npm run verificar-pedidos   # el analizador de chats y el circuito del buzón
+npm run verificar-usuarios  # crear cuentas, entrar con ellas y los frenos de administración
 ```
 
-`verificar-permisos`, `verificar-mi-ruta` y `verificar-pedidos` necesitan el servidor
-arrancado y la base sembrada. Las dos últimas **escriben de verdad** (registran entregas y
-dan de alta pedidos), así que si se agotan hay que regenerar los datos con `npm run seed`.
+`verificar-permisos`, `verificar-mi-ruta`, `verificar-pedidos` y `verificar-usuarios`
+necesitan el servidor arrancado y la base sembrada. Las tres últimas **escriben de verdad**
+(registran entregas, dan de alta pedidos y crean cuentas), así que si se agotan hay que
+regenerar los datos con `npm run seed`.
 `verificar-pedidos` empieza probando el analizador de chats, que es lógica pura y se ejecuta
-sin servidor: es donde de verdad se decide si esta función ahorra trabajo o lo crea.
+sin servidor: es donde de verdad se decide si esa función ahorra trabajo o lo crea.
 
 El primer comando merece una explicación. Windows y macOS **no distinguen mayúsculas**
 en las rutas de archivo, pero Linux sí. Un `import` con la grafía equivocada compila sin

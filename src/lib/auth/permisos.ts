@@ -32,6 +32,7 @@ export const MODULOS = [
   'finanzas',
   'facturacion',
   'liquidaciones',
+  'usuarios',
 ] as const;
 export type Modulo = (typeof MODULOS)[number];
 
@@ -67,6 +68,9 @@ export const PERMISOS: Record<Rol, Record<Modulo, Accion[]>> = {
     finanzas: TODO,
     facturacion: TODO,
     liquidaciones: TODO,
+    // Gestionar cuentas es lo propio de administración: quien puede crear un
+    // administrador puede hacerlo todo, así que no se delega.
+    usuarios: TODO,
   },
   despachador: {
     tablero: SOLO_VER,
@@ -78,6 +82,7 @@ export const PERMISOS: Record<Rol, Record<Modulo, Accion[]>> = {
     finanzas: NADA,
     facturacion: NADA,
     liquidaciones: NADA,
+    usuarios: NADA,
   },
   conductor: {
     tablero: NADA,
@@ -92,6 +97,7 @@ export const PERMISOS: Record<Rol, Record<Modulo, Accion[]>> = {
     finanzas: NADA,
     facturacion: NADA,
     liquidaciones: NADA,
+    usuarios: NADA,
   },
   gerencia: {
     tablero: SOLO_VER,
@@ -103,6 +109,7 @@ export const PERMISOS: Record<Rol, Record<Modulo, Accion[]>> = {
     finanzas: SOLO_VER,
     facturacion: SOLO_VER,
     liquidaciones: SOLO_VER,
+    usuarios: NADA,
   },
 };
 
@@ -201,6 +208,7 @@ export function puedeCompartirUbicacion(sesion: {
 /** Módulo al que pertenece cada ruta interna, para protegerla de una vez. */
 export const MODULO_POR_RUTA: { prefijo: string; modulo: Modulo }[] = [
   { prefijo: '/pedidos', modulo: 'pedidos' },
+  { prefijo: '/usuarios', modulo: 'usuarios' },
   { prefijo: '/despachos', modulo: 'despachos' },
   { prefijo: '/rastreo', modulo: 'rastreo' },
   { prefijo: '/flota', modulo: 'flota' },

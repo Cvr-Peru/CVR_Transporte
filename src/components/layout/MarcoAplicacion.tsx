@@ -24,6 +24,7 @@ import {
   IconoSalir,
   IconoTablero,
   IconoUbicacion,
+  IconoUsuario,
 } from '@/components/ui/Iconos';
 
 /**
@@ -114,6 +115,18 @@ const GRUPOS: { titulo: string; items: ItemNav[] }[] = [
       { href: '/finanzas', etiqueta: 'Costos y rentabilidad', Icono: IconoFinanzas, modulo: 'finanzas' },
       { href: '/facturacion', etiqueta: 'Facturación', Icono: IconoFactura, modulo: 'facturacion' },
       { href: '/liquidaciones', etiqueta: 'Liquidaciones', Icono: IconoLiquidacion, modulo: 'liquidaciones' },
+    ],
+  },
+  {
+    titulo: 'Configuración',
+    items: [
+      {
+        href: '/usuarios',
+        etiqueta: 'Usuarios y permisos',
+        corta: 'Usuarios',
+        Icono: IconoUsuario,
+        modulo: 'usuarios',
+      },
     ],
   },
 ];
