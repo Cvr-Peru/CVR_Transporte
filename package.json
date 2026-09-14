@@ -1,0 +1,44 @@
+{
+  "name": "app-transporte",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "next dev -p 3100",
+    "build": "tsc --noEmit && next build",
+    "start": "node scripts/seed.ts --si-falta && next start",
+    "seed": "node scripts/seed.ts",
+    "seed:si-falta": "node scripts/seed.ts --si-falta",
+    "db": "node scripts/db.ts",
+    "usuario": "node scripts/usuario.ts",
+    "verificar": "node scripts/verificar.ts",
+    "verificar-imports": "node scripts/verificar-imports.ts",
+    "verificar-permisos": "node scripts/verificar-permisos.ts",
+    "verificar-mi-ruta": "node scripts/verificar-mi-ruta.ts",
+    "verificar-pedidos": "node scripts/verificar-pedidos.ts",
+    "iconos": "node scripts/generar-iconos.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "next": "^16.3.5",
+    "pg": "^8.23.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/leaflet": "^1.9.22",
+    "@types/node": "^26.5.1",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "postcss": "^8.5.23",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3"
+  }
+}

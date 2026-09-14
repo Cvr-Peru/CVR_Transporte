@@ -1,0 +1,48 @@
+# Prueba local del despliegue: el mismo Linux que usará Railway.
+#
+#   docker compose up --build
+#
+# Después, abrir http://localhost:3100
+#
+# Levanta un PostgreSQL de verdad y la aplicación contra él, para que la prueba
+# se parezca a producción y no a la base de datos local de PGlite.
+#
+# Para parar y borrar también los datos:  docker compose down -v
+
+services:
+  base-de-datos:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_PASSWORD: prueba
+      POSTGRES_DB: transporte
+    volumes:
+      - datos-postgres:/var/lib/postgresql/data
+    healthcheck:
+      # La aplicación no arranca hasta que la base acepta conexiones.
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  aplicacion:
+    build:
+      context: .
+      dockerfile: Dockerfile.local
+    ports:
+      - '3100:3000'
+    environment:
+      # El nombre del servicio no tiene puntos, así que la aplicación entiende
+      # que es un host interno y NO intenta TLS, que es lo correcto aquí.
+      DATABASE_URL: postgresql://postgres:prueba@base-de-datos:5432/transporte
+      # En el contenedor la hora por defecto es UTC; sin esto, a partir de las
+      # 19:00 en Perú el sistema creería que ya es mañana.
+      TZ: America/Lima
+      PORT: '3000'
+      # Accesos de demostración con un clic. Quitar para probar el acceso real.
+      MOSTRAR_ACCESOS_DEMO: '1'
+    depends_on:
+      base-de-datos:
+        condition: service_healthy
+
+volumes:
+  datos-postgres:

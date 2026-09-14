@@ -1,0 +1,52 @@
+# OSRM (enrutado por calles) + VROOM (optimización de recorridos)
+#
+#   docker compose -f docker-compose.rutas.yml up -d
+#
+# Son los dos servicios que hacen que la optimización use **calles reales** en
+# lugar de distancia en línea recta:
+#
+#   OSRM  → sabe cuánto se tarda de una parada a otra por la carretera.
+#   VROOM → decide en qué orden visitarlas. Necesita a OSRM para la matriz de
+#           distancias, así que no sirve el uno sin el otro.
+#
+# ── ANTES DE LEVANTARLO ──────────────────────────────────────────────────────
+#
+# Hay que preparar los datos de las calles de Perú. Se hace una sola vez:
+#
+#   powershell -ExecutionPolicy Bypass -File scripts/preparar-osrm.ps1
+#
+# Descarga unos 300 MB y tarda varios minutos. Necesita **unos 8 GB de RAM
+# libres**; si el equipo tiene menos, el preprocesado se queda sin memoria.
+#
+# Después, en la aplicación, se apunta al optimizador:
+#
+#   VROOM_URL=http://localhost:3001
+#
+# Y al reiniciar, el botón «Optimizar recorrido» pasará a usar VROOM y lo dirá
+# en pantalla.
+
+services:
+  osrm:
+    image: osrm/osrm-backend
+    # `--max-table-size` hay que subirlo: por defecto OSRM solo calcula matrices
+    # de hasta 100 puntos, y se queda corto en cuanto una ruta tiene paradas.
+    command: osrm-routed --algorithm mld --max-table-size 10000 /data/peru-latest.osrm
+    volumes:
+      # Los archivos preparados por el script viven aquí.
+      - ./datos-osrm:/data
+    ports:
+      - '5000:5000'
+    restart: unless-stopped
+
+  vroom:
+    image: vroomvrp/vroom-docker:latest
+    environment:
+      VROOM_ROUTER: osrm
+      VROOM_OSRM_URL: http://osrm:5000
+    ports:
+      # En el contenedor escucha en el 3000; en tu equipo se publica en el 3001
+      # para no chocar con la aplicación.
+      - '3001:3000'
+    depends_on:
+      - osrm
+    restart: unless-stopped

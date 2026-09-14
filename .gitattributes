@@ -1,0 +1,25 @@
+# Normalización de finales de línea.
+#
+# Se desarrolla en Windows y se despliega en Linux. Sin esto, un archivo guardado
+# con CRLF viaja tal cual al contenedor, y allí los intérpretes se atragantan: un
+# script con shebang falla con «bad interpreter» y los diffs salen con líneas
+# enteras cambiadas por una sola modificación.
+#
+# `text=auto` deja que git decida qué es texto, y `eol=lf` guarda todo con salto
+# de línea de Unix tanto en el repositorio como al hacer checkout.
+* text=auto eol=lf
+
+# Los binarios no se tocan nunca.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+
+# En Windows, estos sí conviene que se queden con CRLF al abrirlos.
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
