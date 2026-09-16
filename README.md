@@ -1,9 +1,15 @@
-# Panel de operación para empresas de transporte de última milla
+# CVR Express · Última Milla
 
-Aplicación web de gestión para una empresa de paquetería y reparto urbano. Cubre el
-ciclo operativo completo: planificar los despachos, asignar unidades y conductores,
-controlar la flota y su documentación legal, vigilar los costos y la rentabilidad,
-facturar y cobrar, liquidar a los conductores y seguir las unidades en el mapa.
+Aplicación web de gestión para empresas de paquetería y reparto urbano. Cubre el
+ciclo operativo completo: recibir los pedidos, planificar los despachos, asignar unidades
+y conductores, controlar la flota y su documentación legal, vigilar los costos y la
+rentabilidad, facturar y cobrar, liquidar a los conductores y seguir las unidades en el
+mapa. El conductor la usa desde el móvil, y el cliente final rastrea su paquete sin
+necesidad de cuenta.
+
+**Se instala una vez por empresa.** Cada transportista tiene su propia instalación y su
+propia base de datos, y pone **su nombre y su logo** desde la aplicación, sin tocar
+código. El programa es de CVR Express; la marca que se ve es la del transportista.
 
 Es un **prototipo funcional con datos de ejemplo**: se ejecuta en tu computador, con
 una base de datos local, y sirve para validar el flujo de trabajo con el equipo antes
@@ -53,6 +59,7 @@ está vacía, para no borrar los datos que ya haya (importante al desplegar).
 | **Facturación** | `/facturacion` | Facturas, cartera, antigüedad de saldos y gestión de cobro |
 | **Liquidaciones** | `/liquidaciones` | Cálculo y pago de comisiones y salarios de los conductores |
 | **Usuarios y permisos** | `/usuarios` | Crear cuentas, asignarles rol, cambiar contraseñas, vincular un conductor con su ficha y quitar accesos. Solo la ve Administración |
+| **Configuración** | `/configuracion` | El nombre, el logo y los datos fiscales de la empresa. Es lo que convierte el programa en el de cada cliente. Solo la ve Administración |
 
 ### Lo que hace útil al prototipo
 
@@ -220,6 +227,48 @@ Si abres la app desde otro país, tu posición real aparecerá lejísimos de las
 y el mapa se verá raro. La pantalla «Mi ubicación» tiene un botón que envía una
 posición **de prueba junto a tu siguiente parada**, para que veas cómo queda en el
 mapa sin necesidad de estar allí.
+
+---
+
+## Una instalación por empresa, con su marca
+
+El programa se vende a transportistas, y cada uno quiere ver **su** nombre y **su** logo.
+Son dos marcas distintas y conviene no mezclarlas:
+
+| | Dónde aparece | De dónde sale |
+| --- | --- | --- |
+| **La empresa que contrata** | Cabecera, pantalla de acceso, «Mi ruta» del conductor, página pública de rastreo, icono al instalar la app | Se configura en `/configuracion`, desde el navegador |
+| **El programa**: CVR Express · Última Milla | Pie de página, discreto | `src/config/producto.ts`, es fijo |
+
+Para cambiar la marca de un cliente **no hace falta tocar código ni volver a desplegar**:
+se sube el logo y se escribe el nombre en `/configuracion`, y el cambio se ve en toda la
+aplicación al instante. El logo se guarda en la base de datos —como las fotos de entrega—
+porque el contenedor de Railway tiene el sistema de archivos efímero.
+
+**Lo que no se configura ahí** es lo regional: la moneda, el idioma y las unidades de
+medida viven en `src/config/empresa.ts`, porque se deciden al instalar la aplicación, no
+al usarla. Cambiar de soles a pesos es un cambio de despliegue, no de pantalla.
+
+### Cómo servirla a varios clientes
+
+Un proyecto de Railway por empresa, **todos dentro de tu misma cuenta**:
+
+```
+Tu cuenta de Railway  (plan Hobby: 50 proyectos)
+│
+├── Proyecto: Transportes Lima Express   → su app + su PostgreSQL
+├── Proyecto: Transportes El Rápido      → su app + su PostgreSQL
+└── Proyecto: Demo para Cliente X        → su app + su PostgreSQL
+```
+
+Ventaja de fondo: **los datos quedan físicamente separados**. No hay ninguna consulta que
+pueda enseñarle a una empresa los datos de otra, porque ni siquiera están en la misma base
+de datos. A cambio, actualizar el programa son varios despliegues, y cada cliente consume
+su parte de Railway.
+
+Para dejar una instalación lista para su dueño: despliega con `SIN_CUENTAS_DEMO=1`, crea el
+primer administrador en `/configuracion-inicial`, y desde `/configuracion` pones su nombre
+y su logo. El resto del equipo lo das de alta en `/usuarios`.
 
 ---
 
@@ -616,6 +665,7 @@ npm run verificar-pedidos   # el analizador de chats y el circuito del buzón
 npm run verificar-usuarios  # crear cuentas, entrar con ellas y los frenos de administración
 npm run verificar-arranque  # el primer administrador, sobre una base sin ninguna cuenta
 npm run verificar-contraste # que ningún texto quede ilegible en claro ni en oscuro
+npm run verificar-marca     # que el nombre y el logo se cambien y lleguen a todas partes
 ```
 
 `verificar-permisos`, `verificar-mi-ruta`, `verificar-pedidos` y `verificar-usuarios`

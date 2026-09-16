@@ -1,30 +1,39 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
-import { MarcoAplicacion } from '@/components/layout/MarcoAplicacion';
+import { MarcoAplicacion, type MarcaEmpresa } from '@/components/layout/MarcoAplicacion';
 import { AvisoSinConexion, RegistroServiceWorker } from '@/components/pwa/Pwa';
-import { empresa } from '@/config/empresa';
+import { identidad, urlLogo } from '@/db/queries/configuracion';
 import { permisosDeSesion } from '@/lib/auth/sesion';
 
-export const metadata: Metadata = {
-  title: {
-    default: `Panel de operación · ${empresa.nombreCorto}`,
-    template: `%s · ${empresa.nombreCorto}`,
-  },
-  description:
-    'Sistema de gestión para empresas de transporte de última milla: despachos, flota, costos, facturación y rastreo.',
-  applicationName: empresa.nombreCorto,
+/**
+ * Los títulos de la aplicación llevan el nombre de la empresa que la usa, así que
+ * se generan en cada petición a partir de la identidad configurada. En la
+ * pestaña del navegador y al instalarla en el móvil aparece **su** nombre, no el
+ * del programa.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const empresa = await identidad();
 
-  // Permite que la app se abra a pantalla completa al instalarla en iOS.
-  appleWebApp: {
-    capable: true,
-    title: empresa.nombreCorto,
-    statusBarStyle: 'black',
-  },
+  return {
+    title: {
+      default: `Panel de operación · ${empresa.nombreCorto}`,
+      template: `%s · ${empresa.nombreCorto}`,
+    },
+    description: `Sistema de gestión de última milla de ${empresa.nombre}: pedidos, despachos, flota, costos, facturación y rastreo.`,
+    applicationName: empresa.nombreCorto,
 
-  // Los números de guía y de teléfono no deben convertirse en enlaces en iOS.
-  formatDetection: { telephone: false, date: false, address: false, email: false },
-};
+    // Permite que la app se abra a pantalla completa al instalarla en iOS.
+    appleWebApp: {
+      capable: true,
+      title: empresa.nombreCorto,
+      statusBarStyle: 'black',
+    },
+
+    // Los números de guía y de teléfono no deben convertirse en enlaces en iOS.
+    formatDetection: { telephone: false, date: false, address: false, email: false },
+  };
+}
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -75,6 +84,20 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   // página y en cada acción: esto es solo presentación.
   const { sesion, modulos, puedeCompartir, puedeMiRuta } = await permisosDeSesion();
 
+  // Y la identidad, para que la cabecera y el pie lleven el nombre y el logo de la
+  // empresa. Se pide ya resuelta, con la dirección del logo, porque el marco es un
+  // componente de cliente y no puede consultar la base de datos.
+  const datos = await identidad();
+  const empresa: MarcaEmpresa = {
+    nombre: datos.nombre,
+    nombreCorto: datos.nombreCorto,
+    idFiscalLabel: datos.idFiscalLabel,
+    idFiscal: datos.idFiscal,
+    telefono: datos.telefono,
+    ciudad: datos.ciudad,
+    logo: urlLogo(datos),
+  };
+
   return (
     // `suppressHydrationWarning` porque el guion de abajo añade la clase del tema
     // a este elemento antes de que React hidrate: sin él avisaría de un desajuste.
@@ -88,6 +111,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           modulos={modulos}
           puedeCompartir={puedeCompartir}
           puedeMiRuta={puedeMiRuta}
+          empresa={empresa}
         >
           {children}
         </MarcoAplicacion>

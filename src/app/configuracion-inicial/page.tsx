@@ -3,8 +3,8 @@ import { Card, CardCuerpo } from '@/components/ui/Card';
 import { EncabezadoPagina } from '@/components/ui/EncabezadoPagina';
 import { IconoAlerta, IconoDespacho } from '@/components/ui/Iconos';
 import { CampoClave } from '@/components/usuarios/CampoClave';
-import { empresa } from '@/config/empresa';
 import { hayUsuarios } from '@/db/queries/usuarios';
+import { identidad } from '@/db/queries/configuracion';
 import { crearPrimerAdministrador } from './actions';
 
 export const dynamic = 'force-dynamic';
@@ -38,6 +38,8 @@ export default async function PaginaConfiguracionInicial({
   // Con cuentas ya creadas, esta pantalla no existe.
   if (await hayUsuarios()) redirect('/entrar');
 
+  const marca = await identidad();
+
   const sp = await searchParams;
   const error = typeof sp.error === 'string' ? ERRORES[sp.error] : undefined;
 
@@ -51,7 +53,7 @@ export default async function PaginaConfiguracionInicial({
           Primera puesta en marcha
         </h1>
         <p className="mt-1 text-sm text-slate-400">
-          {empresa.nombre} · Última milla en {empresa.ciudad}
+          {marca.nombre} · Última milla en {marca.ciudad}
         </p>
       </div>
 

@@ -1,5 +1,5 @@
 {
-  "name": "app-transporte",
+  "name": "cvr-express-ultima-milla",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -22,6 +22,7 @@
     "verificar-usuarios": "node scripts/verificar-usuarios.ts",
     "verificar-arranque": "node scripts/verificar-arranque.ts",
     "verificar-contraste": "node scripts/verificar-contraste.ts",
+    "verificar-marca": "node scripts/verificar-marca.ts",
     "iconos": "node scripts/generar-iconos.ts",
     "typecheck": "tsc --noEmit"
   },

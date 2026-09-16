@@ -3,7 +3,7 @@ import { Badge, BadgeEstado } from '@/components/ui/Badge';
 import { Card, CardCuerpo } from '@/components/ui/Card';
 import { IconoBuscar, IconoCaja, IconoCheck, IconoReloj } from '@/components/ui/Iconos';
 import { buscarPorGuia, novedadesDeEnvio } from '@/db/queries/despachos';
-import { empresa } from '@/config/empresa';
+import { identidad } from '@/db/queries/configuracion';
 import { etiqueta, fecha, fechaHora, hora } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
@@ -62,6 +62,10 @@ export default async function PaginaRastrear({
   const novedades = envio ? await novedadesDeEnvio(envio.id) : [];
   const actual = envio ? pasoActual(envio.estado) : -1;
 
+  // Esta página la ve el cliente final: lleva el nombre y el logo de la empresa
+  // que le está entregando el paquete, no los del programa.
+  const marca = await identidad();
+
   return (
     <>
       <div className="mb-5 text-center">
@@ -109,7 +113,7 @@ export default async function PaginaRastrear({
             <p className="max-w-sm text-xs text-slate-500">
               Revisa que el número <span className="text-slate-300">{guia}</span> esté completo y
               sin espacios. Si el problema continúa, comunícate con nosotros al{' '}
-              {empresa.telefono}.
+              {marca.telefono}.
             </p>
           </CardCuerpo>
         </Card>
@@ -211,7 +215,7 @@ export default async function PaginaRastrear({
               </dl>
               <p className="border-t border-slate-800 pt-3 text-[11px] leading-relaxed text-slate-500">
                 Por seguridad mostramos solo parte del nombre y de la dirección. Si algo no
-                coincide, comunícate con nosotros al {empresa.telefono}.
+                coincide, comunícate con nosotros al {marca.telefono}.
               </p>
             </CardCuerpo>
           </Card>
@@ -250,7 +254,7 @@ export default async function PaginaRastrear({
       ) : null}
 
       <p className="mt-6 text-center text-xs text-slate-600">
-        {empresa.nombre} · {empresa.telefono}
+        {marca.nombre} · {marca.telefono}
         {' · '}
         <Link href="/" className="text-slate-500 underline-offset-2 hover:text-slate-300 hover:underline">
           Entrar al panel interno

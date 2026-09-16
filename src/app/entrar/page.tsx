@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Card, CardCuerpo } from '@/components/ui/Card';
 import { IconoAlerta, IconoDespacho } from '@/components/ui/Iconos';
 import { LimpiarPaginasGuardadas } from '@/components/pwa/LimpiarPaginas';
-import { empresa } from '@/config/empresa';
+import { identidad } from '@/db/queries/configuracion';
 import { CLAVE_DEMO as CLAVE_DEMO_COMPARTIDA, CUENTAS_DEMO } from '@/lib/auth/demo';
 import { hayUsuarios } from '@/db/queries/usuarios';
 import { sesionActual } from '@/lib/auth/sesion';
@@ -70,6 +70,7 @@ export default async function PaginaEntrar({
   const volver = primero(sp.volver) || '/';
 
   const mostrarDemo = process.env.MOSTRAR_ACCESOS_DEMO === '1';
+  const marca = await identidad();
 
   return (
     <div className="mx-auto flex max-w-md flex-col justify-center py-8">
@@ -83,7 +84,7 @@ export default async function PaginaEntrar({
           Panel de operación
         </h1>
         <p className="mt-1 text-sm text-slate-400">
-          {empresa.nombre} · Última milla en {empresa.ciudad}
+          {marca.nombre} · Última milla en {marca.ciudad}
         </p>
       </div>
 

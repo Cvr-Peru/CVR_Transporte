@@ -46,6 +46,9 @@ const ESPERADO: Record<string, Record<Rol, boolean>> = {
   // Gestionar cuentas es solo de administración: quien puede crear un
   // administrador puede hacerlo todo, así que no se delega.
   '/usuarios': { administracion: true, despachador: false, conductor: false, gerencia: false },
+  // La identidad de la empresa —su nombre, su logo, sus datos fiscales— es cosa
+  // de administración, como las cuentas.
+  '/configuracion': { administracion: true, despachador: false, conductor: false, gerencia: false },
 };
 
 function cookiesDe(respuesta: Response): string[] {

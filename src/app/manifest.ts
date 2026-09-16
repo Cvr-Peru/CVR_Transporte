@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { empresa } from '@/config/empresa';
+import { identidad, urlLogo } from '@/db/queries/configuracion';
 
 /**
  * Manifiesto de la aplicación web instalable.
@@ -7,13 +7,19 @@ import { empresa } from '@/config/empresa';
  * Next.js lo publica en `/manifest.webmanifest` y lo enlaza automáticamente
  * desde el `<head>`. Es lo que permite instalarla en el teléfono o el
  * computador como si fuera una app nativa.
+ *
+ * Se genera en cada petición porque lleva el nombre y el logo de **la empresa
+ * que usa la instalación**: al instalarla en el móvil, el conductor ve el icono
+ * y el nombre de su transportista, no los del programa.
  */
-export default function manifest(): MetadataRoute.Manifest {
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  const empresa = await identidad();
+  const logo = urlLogo(empresa);
+
   return {
     name: `${empresa.nombreCorto} · Panel de operación`,
     short_name: empresa.nombreCorto,
-    description:
-      'Gestión de despachos, flota, costos, facturación y rastreo para empresas de transporte de última milla.',
+    description: `Gestión de última milla de ${empresa.nombre}: pedidos, despachos, flota, costos, facturación y rastreo.`,
 
     // Al abrirse desde el icono arranca en el tablero y no muestra la barra del
     // navegador: se comporta como una app.
@@ -31,28 +37,38 @@ export default function manifest(): MetadataRoute.Manifest {
     dir: 'ltr',
     categories: ['business', 'productivity'],
 
-    icons: [
-      {
-        src: '/iconos/icono-192.png',
-        sizes: '192x192',
-        type: 'image/png',
-        purpose: 'any',
-      },
-      {
-        src: '/iconos/icono-512.png',
-        sizes: '512x512',
-        type: 'image/png',
-        purpose: 'any',
-      },
-      {
-        // Variante con el símbolo dentro de la zona segura: el sistema puede
-        // recortar el borde con cualquier forma sin cortar el cubo.
-        src: '/iconos/icono-maskable-512.png',
-        sizes: '512x512',
-        type: 'image/png',
-        purpose: 'maskable',
-      },
-    ],
+    // Con logo propio se usa el suyo; sin él, el cubo que genera el programa.
+    icons: logo
+      ? [
+          {
+            src: logo,
+            sizes: '512x512',
+            type: empresa.logoMime ?? 'image/png',
+            purpose: 'any',
+          },
+        ]
+      : [
+          {
+            src: '/iconos/icono-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: '/iconos/icono-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            // Variante con el símbolo dentro de la zona segura: el sistema puede
+            // recortar el borde con cualquier forma sin cortar el cubo.
+            src: '/iconos/icono-maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
 
     // Atajos al mantener pulsado el icono de la app.
     shortcuts: [
@@ -61,21 +77,18 @@ export default function manifest(): MetadataRoute.Manifest {
         short_name: 'Rastrear',
         description: 'Consultar el estado de un envío por su número de guía',
         url: '/rastrear',
-        icons: [{ src: '/iconos/icono-192.png', sizes: '192x192' }],
       },
       {
         name: 'Despachos de hoy',
         short_name: 'Despachos',
         description: 'Hojas de ruta y asignación de unidades',
         url: '/despachos',
-        icons: [{ src: '/iconos/icono-192.png', sizes: '192x192' }],
       },
       {
         name: 'Rastreo en vivo',
         short_name: 'En vivo',
         description: 'Posición de la flota en el mapa',
         url: '/rastreo',
-        icons: [{ src: '/iconos/icono-192.png', sizes: '192x192' }],
       },
     ],
   };

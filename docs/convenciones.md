@@ -550,7 +550,32 @@ Consecuencias que hay que respetar al escribir código nuevo:
 
 ---
 
-## 11. Comandos
+## 11. La marca: dos cosas distintas
+
+El programa se instala una vez por empresa, así que hay **dos identidades** y conviene no
+mezclarlas:
+
+| | De dónde sale | Dónde se usa |
+| --- | --- | --- |
+| **La empresa que contrata** | Tabla `configuracion`, editable en `/configuracion` | Cabecera, acceso, «Mi ruta», rastreo público, manifiesto PWA |
+| **El programa** (CVR Express · Última Milla) | `src/config/producto.ts`, fijo | Pie de página |
+
+- La identidad se lee con `identidad()` (`src/db/queries/configuracion.ts`), envuelta en
+  `cache()` porque la piden el layout, los metadatos y la página a la vez. **Nunca lanza**:
+  si la base de datos no responde devuelve la del código, porque el marco se renderiza en
+  todas las páginas, incluida la de acceso.
+- `src/config/empresa.ts` sigue siendo lo **regional** —moneda, idioma, unidades— y no
+  cambia por cliente.
+- El marco de navegación es un componente de cliente: **no puede importar el módulo que
+  consulta la base de datos**. El layout la lee y le pasa los datos ya resueltos, incluida
+  la dirección del logo.
+- El logo se sirve desde `/api/logo`, que es **público** a propósito: se ve en la pantalla
+  de acceso, antes de que nadie se identifique. Lleva una versión en la dirección para
+  poder cachearlo sin riesgo de enseñar el anterior.
+
+---
+
+## 12. Comandos
 
 ```bash
 npm run seed        # borra las tablas y regenera 45 días de operación

@@ -364,6 +364,32 @@ CREATE TABLE IF NOT EXISTS fotos_entrega (
 );
 
 -- ─────────────────────────────────────────────────────────────
+-- Identidad de la empresa que usa la instalación
+-- ─────────────────────────────────────────────────────────────
+-- Una sola fila (siempre «id = 1») con el nombre, los datos fiscales y el logo
+-- de la empresa. Es lo que permite instalar el mismo programa para empresas
+-- distintas sin tocar código: cada una pone su marca desde la aplicación.
+--
+-- El logo se guarda aquí, como las fotos de entrega, porque el contenedor de
+-- Railway tiene el sistema de archivos efímero: un archivo en disco
+-- desaparecería en el siguiente despliegue.
+--
+-- Va al final del esquema, después de «usuarios», por el mismo motivo que
+-- «fotos_entrega»: la referencia a esa tabla exige que ya exista.
+CREATE TABLE IF NOT EXISTS configuracion (
+  id              INTEGER PRIMARY KEY,
+  nombre          TEXT NOT NULL,
+  nombre_corto    TEXT NOT NULL,
+  id_fiscal       TEXT,
+  telefono        TEXT,
+  ciudad          TEXT,
+  logo            BYTEA,
+  logo_mime       TEXT,
+  actualizado     TEXT,
+  actualizado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL
+);
+
+-- ─────────────────────────────────────────────────────────────
 -- Índices para las consultas más frecuentes
 -- ─────────────────────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS idx_envios_ruta       ON envios(ruta_id);
@@ -411,6 +437,7 @@ export const TABLAS_EN_ORDEN_DE_BORRADO = [
   'usuarios',
   'novedades',
   'fotos_entrega',
+  'configuracion',
   'factura_items',
   'posiciones',
   'combustible',

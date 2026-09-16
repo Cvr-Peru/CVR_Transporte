@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
-import { empresa } from '@/config/empresa';
+import { producto } from '@/config/producto';
 import { BotonInstalar } from '@/components/pwa/Pwa';
 import { ConmutadorTema } from '@/components/tema/ConmutadorTema';
 import { salir } from '@/app/entrar/actions';
@@ -128,6 +128,13 @@ const GRUPOS: { titulo: string; items: ItemNav[] }[] = [
         Icono: IconoUsuario,
         modulo: 'usuarios',
       },
+      {
+        href: '/configuracion',
+        etiqueta: 'Configuración de la empresa',
+        corta: 'Empresa',
+        Icono: IconoDespacho,
+        modulo: 'configuracion',
+      },
     ],
   },
 ];
@@ -144,12 +151,40 @@ function esRutaPublica(pathname: string): boolean {
   return RUTAS_PUBLICAS.some((r) => pathname === r || pathname.startsWith(`${r}/`));
 }
 
-function Marca({ compacta = false }: { compacta?: boolean }) {
+/**
+ * Marca de la empresa que usa la instalación.
+ *
+ * Se recibe como dato y no se lee aquí porque este es un componente de cliente:
+ * importar el módulo que consulta la base de datos arrastraría el controlador al
+ * navegador. El layout la lee en el servidor y la pasa ya resuelta, incluida la
+ * dirección del logo.
+ */
+export interface MarcaEmpresa {
+  nombre: string;
+  nombreCorto: string;
+  idFiscalLabel: string;
+  idFiscal: string;
+  telefono: string;
+  ciudad: string;
+  /** Dirección del logo, o `null` si la empresa no ha subido ninguno. */
+  logo: string | null;
+}
+
+function Marca({ empresa, compacta = false }: { empresa: MarcaEmpresa; compacta?: boolean }) {
   return (
     <Link href="/" className="flex min-w-0 items-center gap-2.5 px-3 py-3">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 text-white">
-        <IconoDespacho width={19} height={19} />
-      </span>
+      {empresa.logo ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={empresa.logo}
+          alt=""
+          className="h-9 w-9 shrink-0 rounded-lg border border-slate-800 bg-slate-950 object-contain"
+        />
+      ) : (
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 text-white">
+          <IconoDespacho width={19} height={19} />
+        </span>
+      )}
       <span className="min-w-0">
         <span className="block truncate text-sm font-semibold text-slate-100">
           {empresa.nombreCorto}
@@ -201,12 +236,14 @@ export function MarcoAplicacion({
   modulos,
   puedeCompartir,
   puedeMiRuta,
+  empresa,
 }: {
   children: ReactNode;
   sesion: Sesion | null;
   modulos: Modulo[];
   puedeCompartir: boolean;
   puedeMiRuta: boolean;
+  empresa: MarcaEmpresa;
 }) {
   const pathname = usePathname();
   const [menuAbierto, setMenuAbierto] = useState(false);
@@ -223,13 +260,14 @@ export function MarcoAplicacion({
           {/* El conmutador también aquí: quien prefiere claro no debería tener que
               entrar a oscuras para poder cambiarlo. */}
           <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 pr-3">
-            <Marca />
+            <Marca empresa={empresa} />
             <ConmutadorTema compacto />
           </div>
         </header>
         <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">{children}</main>
         <footer className="border-t border-slate-800 px-4 py-3 text-center text-[11px] text-slate-600">
           {empresa.nombre} · {empresa.telefono}
+          <span className="mt-1 block text-slate-700">con {producto.completo}</span>
         </footer>
       </div>
     );
@@ -272,7 +310,7 @@ export function MarcoAplicacion({
     <div className="flex min-h-screen flex-col lg:flex-row">
       {/* ── Barra lateral (escritorio) ───────────────────────── */}
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-slate-800 bg-slate-900/40 lg:flex">
-        <Marca />
+        <Marca empresa={empresa} />
         <nav className="flex-1 overflow-y-auto px-2 pb-3">
           {grupos.map((grupo) => (
             <div key={grupo.titulo} className="mb-4">
@@ -316,7 +354,7 @@ export function MarcoAplicacion({
       <div className="flex min-w-0 flex-1 flex-col">
         {/* ── Cabecera (móvil) ───────────────────────────────── */}
         <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-slate-800 bg-slate-950/95 pr-2 pt-[env(safe-area-inset-top)] backdrop-blur lg:hidden">
-          <Marca compacta />
+          <Marca empresa={empresa} compacta />
           <div className="flex items-center gap-1">
             <ConmutadorTema compacto />
             <BotonInstalar className="w-auto" />
@@ -337,8 +375,8 @@ export function MarcoAplicacion({
         </main>
 
         <footer className="hidden border-t border-slate-800 px-7 py-3 text-center text-[11px] text-slate-600 lg:block">
-          {empresa.nombre} · {empresa.idFiscalLabel} {empresa.idFiscal} · Prototipo con datos de
-          ejemplo
+          {empresa.nombre} · {empresa.idFiscalLabel} {empresa.idFiscal} ·{' '}
+          <span className="text-slate-700">{producto.completo}</span>
         </footer>
       </div>
 
