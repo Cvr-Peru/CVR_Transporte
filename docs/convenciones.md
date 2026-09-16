@@ -503,8 +503,41 @@ Railway tiene un sistema de archivos efímero y perdería los archivos en cada d
 
 ## 10. Estilo de la interfaz
 
-- Tema oscuro sobre la paleta `slate`. Fondo general `bg-slate-950`; tarjetas
-  `bg-slate-900/50` con `border-slate-800` (ya resueltas por `Card`).
+### 10.1 Los dos temas
+
+La aplicación tiene **tema claro y tema oscuro**, y se eligen con una clase en `<html>`:
+
+- `:root` define el tema **claro** (el de por defecto) y `.dark` lo sobrescribe.
+- `src/app/layout.tsx` lleva un guion en línea al principio del `<body>` que aplica la
+  clase antes del primer pintado, leyendo la elección guardada o, si no la hay, la
+  preferencia del sistema. Sin él se vería un parpadeo blanco al abrir en oscuro.
+- `ConmutadorTema` (en la barra lateral y en la cabecera del móvil) cambia la clase y
+  guarda la elección.
+
+**Cómo se consigue sin reescribir 1.500 clases.** La interfaz está construida entera sobre
+la paleta `slate` más unos pocos acentos, así que en lugar de añadir variantes `dark:` por
+todas partes se **remonta la paleta por variables CSS** (`@theme inline` + `--s950`,
+`--sky300`…). `bg-slate-950` sigue significando «fondo de la página» en los dos temas; lo
+único que cambia es el color al que apunta.
+
+Consecuencias que hay que respetar al escribir código nuevo:
+
+- **No usar variantes `dark:`** salvo para algo puntual: la remontada ya cubre el color.
+  La variante existe (`@custom-variant dark`), pero cada uso es una excepción que hay que
+  justificar.
+- **No escribir colores en hexadecimal** en un componente. Si un SVG o una gráfica necesita
+  un color propio, se declara una variable en `globals.css` para los dos temas, como se
+  hizo con `--mapa-fondo`, `--mapa-rejilla` y `--mapa-texto`.
+- **Los tonos 500 y 600** de los acentos son tintes y fondos de botón sólido; los 100–400
+  son texto sobre fondos tenues y **se invierten** en el tema claro.
+- Antes de dar por bueno un color nuevo, `npm run verificar-contraste` calcula el contraste
+  de las combinaciones que usa la aplicación en los dos temas. No sustituye a mirarlo, pero
+  caza el fallo que no salta a la vista: un texto casi del color de su fondo.
+
+### 10.2 Resto de convenciones
+
+- Fondo general `bg-slate-950`; tarjetas `bg-slate-900/50` con `border-slate-800` (ya
+  resueltas por `Card`).
 - Texto principal `text-slate-100`/`text-slate-200`; secundario
   `text-slate-400`; muy tenue `text-slate-500`.
 - Acento de acción: `sky`. Positivo: `emerald`. Atención: `amber`. Problema: `rose`.

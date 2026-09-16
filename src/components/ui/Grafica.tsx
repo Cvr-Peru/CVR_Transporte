@@ -200,7 +200,7 @@ export function Dona({
             cy={tamano / 2}
             r={radio}
             fill="none"
-            stroke="#1e293b"
+            stroke="var(--color-slate-800)"
             strokeWidth={grosor}
           />
           {total > 0 &&

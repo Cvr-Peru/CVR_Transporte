@@ -35,8 +35,31 @@ export const viewport: Viewport = {
   // Necesario para que la interfaz respete el área segura (muesca y barra
   // inferior del iPhone) en lugar de quedar recortada.
   viewportFit: 'cover',
-  themeColor: '#020617',
+  // Color de la barra del navegador en el móvil. Va por preferencia del sistema y
+  // no por el tema elegido en la aplicación: esta etiqueta la genera el servidor,
+  // que no sabe qué eligió el visitante.
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#eef2f7' },
+    { media: '(prefers-color-scheme: dark)', color: '#020617' },
+  ],
 };
+
+/**
+ * Aplica el tema antes del primer pintado.
+ *
+ * Sin esto se vería un parpadeo: el servidor manda siempre el mismo HTML, así que
+ * el navegador pintaría en claro y solo después el conmutador pondría el oscuro.
+ * Como es un guion en línea al principio del `<body>`, se ejecuta antes de que se
+ * dibuje nada.
+ *
+ * Si el navegador bloquea `localStorage` —modo privado, cookies restringidas— se
+ * sigue la preferencia del sistema, que es un final razonable.
+ */
+const GUION_TEMA = `(function(){try{
+var g=localStorage.getItem('transporte-tema');
+var oscuro = g ? g==='oscuro' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+if(oscuro){document.documentElement.classList.add('dark');}
+}catch(e){}})();`;
 
 /**
  * El marco raíz lee la sesión para saber qué módulos mostrar, así que tiene que
@@ -53,8 +76,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const { sesion, modulos, puedeCompartir, puedeMiRuta } = await permisosDeSesion();
 
   return (
-    <html lang="es">
+    // `suppressHydrationWarning` porque el guion de abajo añade la clase del tema
+    // a este elemento antes de que React hidrate: sin él avisaría de un desajuste.
+    <html lang="es" suppressHydrationWarning>
       <body>
+        <script dangerouslySetInnerHTML={{ __html: GUION_TEMA }} />
         <RegistroServiceWorker />
         <AvisoSinConexion />
         <MarcoAplicacion

@@ -200,3 +200,18 @@ export const IconoUsuario = (p: PropsIcono) => (
     <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
   </Base>
 );
+
+/** Sol: se muestra en modo oscuro, porque pulsar lleva al claro. */
+export const IconoSol = (p: PropsIcono) => (
+  <Base {...p}>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+  </Base>
+);
+
+/** Luna: se muestra en modo claro, porque pulsar lleva al oscuro. */
+export const IconoLuna = (p: PropsIcono) => (
+  <Base {...p}>
+    <path d="M20.5 13.5A8.5 8.5 0 1 1 10.5 3.5a6.8 6.8 0 0 0 10 10z" />
+  </Base>
+);

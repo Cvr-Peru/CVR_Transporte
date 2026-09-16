@@ -77,6 +77,14 @@ const COLOR_UNIDAD: Record<string, string> = {
   fuera_servicio: '#f43f5e',
 };
 
+/**
+ * Los estilos del dibujo viven en `globals.css` y no aquí.
+ *
+ * Es un SVG con colores propios —fondo, rejilla, halo de las etiquetas— y, si
+ * estuvieran fijos en el componente, el mapa seguiría pintándose oscuro sobre una
+ * página clara. Poniéndolos en la hoja global salen del mismo sitio que el resto
+ * de la interfaz y cambian con el tema sin tocar nada más.
+ */
 const ANCHO = 1000;
 const ALTO = 620;
 const MARGEN = 54;
@@ -84,21 +92,6 @@ const MARGEN = 54;
 const SPAN_MINIMO = 0.0025;
 /** A partir de esta velocidad se considera que la unidad está en movimiento. */
 const UMBRAL_MOVIMIENTO = 5;
-
-const ESTILOS = `
-.rt-grid { fill: none; stroke: #1e293b; stroke-width: 1; }
-.rt-marco { fill: none; stroke: #1e293b; stroke-width: 1.5; }
-.rt-trayectoria { fill: none; stroke: #38bdf8; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; opacity: 0.85; }
-.rt-trayectoria-area { fill: #0ea5e9; opacity: 0.12; stroke: none; }
-.rt-halo { fill: none; opacity: 0.5; transform-box: fill-box; transform-origin: center; }
-.rt-parada { stroke: #020617; stroke-width: 1.6; }
-.rt-parada-num { fill: #020617; font-size: 11px; font-weight: 700; text-anchor: middle; }
-.rt-unidad { stroke: #020617; stroke-width: 2; }
-.rt-placa { fill: #e2e8f0; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #020617; stroke-width: 3px; stroke-linejoin: round; text-anchor: middle; }
-.rt-placa-sub { fill: #94a3b8; font-size: 10px; paint-order: stroke; stroke: #020617; stroke-width: 3px; stroke-linejoin: round; text-anchor: middle; }
-.rt-leyenda { fill: #cbd5e1; font-size: 12px; }
-.rt-leyenda-tenue { fill: #64748b; font-size: 11px; }
-`;
 
 /** Número finito o `null`. */
 function numero(valor: unknown): number | null {
@@ -304,7 +297,6 @@ export function MapaFlota({
           . No se usa cartografía real: las posiciones son relativas y los datos son
           simulados.
         </desc>
-        <style>{ESTILOS}</style>
 
         <defs>
           <pattern id="rejilla-calles" width="52" height="52" patternUnits="userSpaceOnUse">
@@ -320,7 +312,7 @@ export function MapaFlota({
         </defs>
 
         {/* Fondo y retícula de "calles" */}
-        <rect x="0" y="0" width={ANCHO} height={ALTO} fill="#020617" rx="12" />
+        <rect x="0" y="0" width={ANCHO} height={ALTO} fill="var(--mapa-fondo)" rx="12" />
         <rect x="0" y="0" width={ANCHO} height={ALTO} fill="url(#rejilla-calles)" rx="12" />
         <rect
           x={MARGEN / 2}
@@ -371,7 +363,7 @@ export function MapaFlota({
                 fill={m.color}
                 className="rt-unidad"
               />
-              <circle r={2.9} fill="#020617" />
+              <circle r={2.9} fill="var(--mapa-trazo)" />
             </g>
             <text x={m.x} y={m.y} dy={m.dy} className="rt-placa">
               {m.u.placa}

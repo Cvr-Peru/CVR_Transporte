@@ -21,6 +21,7 @@
     "verificar-pedidos": "node scripts/verificar-pedidos.ts",
     "verificar-usuarios": "node scripts/verificar-usuarios.ts",
     "verificar-arranque": "node scripts/verificar-arranque.ts",
+    "verificar-contraste": "node scripts/verificar-contraste.ts",
     "iconos": "node scripts/generar-iconos.ts",
     "typecheck": "tsc --noEmit"
   },

@@ -1,12 +1,184 @@
 @import "tailwindcss";
 
 /*
- * Estilos base. Se usa la paleta slate de Tailwind directamente en los
- * componentes, así que aquí solo viven los ajustes globales.
+ * ─────────────────────────────────────────────────────────────
+ * Tema claro y tema oscuro
+ * ─────────────────────────────────────────────────────────────
+ * Toda la interfaz está construida sobre la paleta `slate` de Tailwind, con
+ * acentos en `sky`, `emerald`, `amber`, `rose`, `violet`, `yellow` y `orange`.
+ * En total, unas 1.500 clases de color repartidas por todo el código.
+ *
+ * Reescribir cada una con su variante `dark:` sería inviable y, sobre todo,
+ * frágil: cada clase nueva volvería a olvidarse. En su lugar se **remonta la
+ * paleta por variables CSS**. `bg-slate-950` sigue significando «fondo de la
+ * página» y `text-slate-200` «texto principal» en los dos temas; lo único que
+ * cambia es el color al que apunta cada nombre.
+ *
+ * En el tema claro la escala de `slate` se **invierte**, porque el código la usa
+ * con esa lógica: cuanto más alto el número, más superficie y más contraste. Lo
+ * que era casi negro pasa a casi blanco y al revés.
+ *
+ * Los acentos se invierten solo por la mitad clara, que es la que se usa como
+ * texto sobre fondos tenues (`bg-sky-500/10 text-sky-300`). Los tonos 500 y 600
+ * son botones sólidos con texto blanco y **no se tocan**: invertirlos dejaría
+ * botones claros con letra blanca, ilegibles.
+ *
+ * El tema se elige con una clase en `<html>`, no con la preferencia del sistema:
+ * así el conmutador puede imponerse sobre lo que diga el sistema operativo.
  */
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Tema claro (por defecto) ──────────────────────────────── */
 :root {
+  color-scheme: light;
+
+  /* Escala de grises invertida. El fondo de página es un gris muy suave y las
+     tarjetas son blancas, para que se distingan sin necesidad de sombras. */
+  --s50: #020617;
+  --s100: #0f172a;
+  --s200: #1e293b;
+  --s300: #334155;
+  --s400: #475569;
+  --s500: #64748b;
+  --s600: #94a3b8;
+  --s700: #cbd5e1;
+  --s800: #e2e8f0;
+  --s900: #ffffff;
+  --s950: #eef2f7;
+
+  /* Acentos. `100`–`400` son texto sobre fondo tenue: en claro tienen que ser
+     oscuros. `500` y `600` no se declaran aquí porque no cambian. */
+  --sky100: #075985;
+  --sky200: #075985;
+  --sky300: #0369a1;
+  --sky400: #0284c7;
+  /* Los tonos 600 son fondos de botón con letra blanca. En su valor original de
+     Tailwind quedaban en 4,1:1, por debajo del mínimo de accesibilidad; con el
+     700 suben a 6,5:1. Es el mismo tono, un paso más oscuro. */
+  --sky600: #0369a1;
+
+  --emerald200: #065f46;
+  --emerald300: #047857;
+  --emerald400: #059669;
+  --emerald600: #047857;
+
+  --amber200: #92400e;
+  --amber300: #92400e;
+  --amber400: #d97706;
+  --amber600: #b45309;
+
+  --rose200: #9f1239;
+  --rose300: #be123c;
+
+  --violet200: #5b21b6;
+  --violet300: #6d28d9;
+
+  --yellow200: #854d0e;
+
+  --orange300: #c2410c;
+
+  /* El mapa esquemático se dibuja con colores propios, así que necesita sus
+     variables: si no, seguiría pintándose oscuro sobre una página clara. */
+  --mapa-fondo: #ffffff;
+  --mapa-rejilla: #dbe3ec;
+  --mapa-trazo: #ffffff;
+  --mapa-texto: #1e293b;
+  --mapa-texto-tenue: #64748b;
+}
+
+/* ── Tema oscuro ───────────────────────────────────────────── */
+.dark {
   color-scheme: dark;
+
+  --s50: #f8fafc;
+  --s100: #f1f5f9;
+  --s200: #e2e8f0;
+  --s300: #cbd5e1;
+  --s400: #94a3b8;
+  --s500: #64748b;
+  --s600: #475569;
+  --s700: #334155;
+  --s800: #1e293b;
+  --s900: #0f172a;
+  --s950: #020617;
+
+  --sky100: #e0f2fe;
+  --sky200: #bae6fd;
+  --sky300: #7dd3fc;
+  --sky400: #38bdf8;
+  --sky600: #0369a1;
+
+  --emerald200: #a7f3d0;
+  --emerald300: #6ee7b7;
+  --emerald400: #34d399;
+  --emerald600: #047857;
+
+  --amber200: #fde68a;
+  --amber300: #fcd34d;
+  --amber400: #fbbf24;
+  --amber600: #b45309;
+
+  --rose200: #fecdd3;
+  --rose300: #fda4af;
+
+  --violet200: #ddd6fe;
+  --violet300: #c4b5fd;
+
+  --yellow200: #fef08a;
+
+  --orange300: #fdba74;
+
+  --mapa-fondo: #020617;
+  --mapa-rejilla: #1e293b;
+  --mapa-trazo: #020617;
+  --mapa-texto: #e2e8f0;
+  --mapa-texto-tenue: #94a3b8;
+}
+
+/*
+ * `inline` hace que las utilidades apunten a la variable en lugar de llevarse el
+ * valor incrustado. Es lo que permite que `bg-slate-950` cambie de color sin
+ * recompilar nada.
+ */
+@theme inline {
+  --color-slate-50: var(--s50);
+  --color-slate-100: var(--s100);
+  --color-slate-200: var(--s200);
+  --color-slate-300: var(--s300);
+  --color-slate-400: var(--s400);
+  --color-slate-500: var(--s500);
+  --color-slate-600: var(--s600);
+  --color-slate-700: var(--s700);
+  --color-slate-800: var(--s800);
+  --color-slate-900: var(--s900);
+  --color-slate-950: var(--s950);
+
+  --color-sky-100: var(--sky100);
+  --color-sky-200: var(--sky200);
+  --color-sky-300: var(--sky300);
+  --color-sky-400: var(--sky400);
+  --color-sky-600: var(--sky600);
+
+  --color-emerald-200: var(--emerald200);
+  --color-emerald-300: var(--emerald300);
+  --color-emerald-400: var(--emerald400);
+  --color-emerald-600: var(--emerald600);
+
+  --color-amber-200: var(--amber200);
+  --color-amber-300: var(--amber300);
+  --color-amber-400: var(--amber400);
+  --color-amber-600: var(--amber600);
+
+  --color-rose-200: var(--rose200);
+  --color-rose-300: var(--rose300);
+
+  --color-violet-200: var(--violet200);
+  --color-violet-300: var(--violet300);
+
+  --color-yellow-200: var(--yellow200);
+
+  --color-orange-300: var(--orange300);
 }
 
 html,
@@ -16,8 +188,8 @@ body {
 
 body {
   margin: 0;
-  background-color: #020617; /* slate-950 */
-  color: #e2e8f0; /* slate-200 */
+  background-color: var(--color-slate-950);
+  color: var(--color-slate-200);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -37,13 +209,13 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background-color: #334155; /* slate-700 */
+  background-color: var(--color-slate-700);
   border-radius: 9999px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #475569; /* slate-600 */
+  background-color: var(--color-slate-600);
 }
 
 /* Punto "en vivo" */
@@ -73,4 +245,81 @@ body {
 }
 .aparecer {
   animation: aparecer 0.6s ease-out both;
+}
+
+/*
+ * El mapa esquemático. Vive aquí y no en el componente para que sus colores
+ * salgan del mismo sitio que los del resto de la interfaz: es un SVG con
+ * colores propios y, si se quedaran fijos, seguiría pintándose oscuro sobre una
+ * página clara.
+ */
+.rt-grid {
+  fill: none;
+  stroke: var(--mapa-rejilla);
+  stroke-width: 1;
+}
+.rt-marco {
+  fill: none;
+  stroke: var(--mapa-rejilla);
+  stroke-width: 1.5;
+}
+.rt-trayectoria {
+  fill: none;
+  stroke: #38bdf8;
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  opacity: 0.85;
+}
+.rt-trayectoria-area {
+  fill: #0ea5e9;
+  opacity: 0.12;
+  stroke: none;
+}
+.rt-halo {
+  fill: none;
+  opacity: 0.5;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.rt-parada {
+  stroke: var(--mapa-trazo);
+  stroke-width: 1.6;
+}
+.rt-parada-num {
+  fill: var(--mapa-trazo);
+  font-size: 11px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+.rt-unidad {
+  stroke: var(--mapa-trazo);
+  stroke-width: 2;
+}
+.rt-placa {
+  fill: var(--mapa-texto);
+  font-size: 12px;
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: var(--mapa-trazo);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  text-anchor: middle;
+}
+.rt-placa-sub {
+  fill: var(--mapa-texto-tenue);
+  font-size: 10px;
+  paint-order: stroke;
+  stroke: var(--mapa-trazo);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  text-anchor: middle;
+}
+.rt-leyenda {
+  fill: var(--mapa-texto);
+  font-size: 12px;
+}
+.rt-leyenda-tenue {
+  fill: var(--mapa-texto-tenue);
+  font-size: 11px;
 }

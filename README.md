@@ -79,6 +79,12 @@ está vacía, para no borrar los datos que ya haya (importante al desplegar).
   de quien recibe, un toque para abrir el navegador del teléfono con el domicilio como
   destino y otro para llamar al cliente. Comparte el GPS desde la misma pantalla y funciona
   instalada como aplicación.
+- **Modo claro y modo oscuro.** Se cambia con un botón en la barra lateral —o en la
+  cabecera, desde el móvil— y la elección se recuerda. La primera vez sigue lo que diga el
+  sistema operativo. La interfaz entera está hecha sobre una sola paleta, así que el tema se
+  resuelve remontándola por variables CSS en lugar de duplicar cada clase, y
+  `npm run verificar-contraste` comprueba que ningún texto quede ilegible en ninguno de los
+  dos.
 
 ---
 
@@ -88,7 +94,7 @@ está vacía, para no borrar los datos que ya haya (importante al desplegar).
 | --- | --- | --- |
 | Framework | Next.js 16 (App Router) + React 19 | Componentes de servidor: leen la base de datos directamente, sin capa de API que mantener |
 | Lenguaje | TypeScript en modo `strict` | Los errores se detectan al compilar, no en producción |
-| Estilos | Tailwind CSS v4 | Interfaz consistente sin configuración adicional |
+| Estilos | Tailwind CSS v4 | Interfaz consistente sin configuración adicional. Tema claro y oscuro, elegibles y recordados |
 | Base de datos | PostgreSQL. En producción con el controlador `pg`; en local con PGlite (PostgreSQL en WebAssembly) | El mismo dialecto en los dos entornos: se desarrolla sin instalar nada y se despliega en un PostgreSQL real |
 | Gráficas y mapas | SVG y CSS propios | Sin librerías externas ni peticiones a internet: funciona sin conexión |
 
@@ -609,6 +615,7 @@ npm run verificar-mi-ruta   # el conductor entrega con foto, y no puede tocar lo
 npm run verificar-pedidos   # el analizador de chats y el circuito del buzón
 npm run verificar-usuarios  # crear cuentas, entrar con ellas y los frenos de administración
 npm run verificar-arranque  # el primer administrador, sobre una base sin ninguna cuenta
+npm run verificar-contraste # que ningún texto quede ilegible en claro ni en oscuro
 ```
 
 `verificar-permisos`, `verificar-mi-ruta`, `verificar-pedidos` y `verificar-usuarios`

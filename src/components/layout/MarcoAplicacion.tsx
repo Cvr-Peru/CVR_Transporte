@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { empresa } from '@/config/empresa';
 import { BotonInstalar } from '@/components/pwa/Pwa';
+import { ConmutadorTema } from '@/components/tema/ConmutadorTema';
 import { salir } from '@/app/entrar/actions';
 import { etiquetaRol, type Modulo } from '@/lib/auth/permisos';
 import type { Sesion } from '@/lib/auth/sesion';
@@ -219,8 +220,11 @@ export function MarcoAplicacion({
     return (
       <div className="flex min-h-screen flex-col">
         <header className="border-b border-slate-800 bg-slate-900/40 pt-[env(safe-area-inset-top)]">
-          <div className="mx-auto w-full max-w-3xl">
+          {/* El conmutador también aquí: quien prefiere claro no debería tener que
+              entrar a oscuras para poder cambiarlo. */}
+          <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 pr-3">
             <Marca />
+            <ConmutadorTema compacto />
           </div>
         </header>
         <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">{children}</main>
@@ -299,6 +303,7 @@ export function MarcoAplicacion({
         </nav>
 
         <div className="space-y-2 border-t border-slate-800 px-3 py-3">
+          <ConmutadorTema />
           <BotonInstalar />
           <p className="flex items-center gap-1.5 text-[11px] text-amber-300/90">
             <span className="latido inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />
@@ -313,6 +318,7 @@ export function MarcoAplicacion({
         <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-slate-800 bg-slate-950/95 pr-2 pt-[env(safe-area-inset-top)] backdrop-blur lg:hidden">
           <Marca compacta />
           <div className="flex items-center gap-1">
+            <ConmutadorTema compacto />
             <BotonInstalar className="w-auto" />
             <form action={salir}>
               <button
@@ -343,7 +349,7 @@ export function MarcoAplicacion({
             type="button"
             aria-label="Cerrar menú"
             onClick={() => setMenuAbierto(false)}
-            className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
           />
           <nav className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-slate-800 bg-slate-900 pb-[env(safe-area-inset-bottom)] shadow-2xl">
             <div className="flex items-center justify-between px-4 py-3">
