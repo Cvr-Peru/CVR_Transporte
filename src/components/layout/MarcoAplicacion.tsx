@@ -132,7 +132,7 @@ const GRUPOS: { titulo: string; items: ItemNav[] }[] = [
 ];
 
 /** Rutas que se muestran sin la navegación interna. */
-const RUTAS_PUBLICAS = ['/entrar', '/sin-acceso', '/rastrear', '/offline'];
+const RUTAS_PUBLICAS = ['/entrar', '/configuracion-inicial', '/sin-acceso', '/rastrear', '/offline'];
 
 function esActiva(pathname: string, href: string): boolean {
   if (href === '/') return pathname === '/';

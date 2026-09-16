@@ -270,6 +270,12 @@ async function principal() {
   const antes = paradasResueltas(miRuta.html);
   comprobar(antes !== null, 'La cabecera indica el avance de paradas');
 
+  // Las fotos que ya había antes de entregar. La pantalla muestra también las de
+  // ejemplo en las paradas resueltas, así que «la primera foto de la página» no
+  // sirve para identificar la que se acaba de subir: hay que mirar cuál aparece
+  // de nueva.
+  const fotosPrevias = new Set(fotosEn(miRuta.html));
+
   // ── 2. Registrar una entrega funciona ─────────────────────
   const formEntrega = formularioCon(miRuta.html, 'paradaId', 'tipo');
   comprobar(formEntrega !== null, 'Se localiza el formulario de entrega');
@@ -316,7 +322,14 @@ async function principal() {
   const fotosPropias = fotosEn(despues.html);
   comprobar(fotosPropias.length > 0, 'La entrega aparece con su foto en la ruta');
 
-  const idFotoPropia = fotosPropias[0] ?? null;
+  const fotosNuevas = fotosPropias.filter((id) => !fotosPrevias.has(id));
+  comprobar(
+    fotosNuevas.length === 1,
+    'La entrega añade exactamente una foto, la que se acaba de subir',
+    `nuevas: ${fotosNuevas.join(', ') || 'ninguna'}`,
+  );
+
+  const idFotoPropia = fotosNuevas[0] ?? null;
   if (idFotoPropia) {
     const imagenServida = await fetch(`${BASE}/api/foto/${idFotoPropia}`, {
       headers: { Cookie: cookieConductor },
@@ -331,6 +344,16 @@ async function principal() {
       bytes.byteLength === imagen.size,
       'Los bytes servidos son exactamente los que se subieron',
       `subidos ${imagen.size}, servidos ${bytes.byteLength}`,
+    );
+
+    // La longitud podría cuadrar por casualidad; la firma del archivo no. Es la
+    // comprobación que demuestra que el binario sobrevive intacto al viaje de ida
+    // y vuelta por la base de datos.
+    const firmaPng = [137, 80, 78, 71, 13, 10, 26, 10];
+    comprobar(
+      firmaPng.every((byte, i) => bytes[i] === byte),
+      'La imagen servida sigue siendo un PNG válido',
+      `empieza por ${[...bytes.slice(0, 8)].join(',')}`,
     );
     comprobar(
       /private/.test(imagenServida.headers.get('cache-control') ?? ''),

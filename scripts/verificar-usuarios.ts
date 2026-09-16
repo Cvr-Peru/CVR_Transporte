@@ -169,6 +169,17 @@ async function principal(): Promise<void> {
   const formAlta = formularioCon(pagina.html, 'email', 'usuarioId');
   comprobar(formAlta !== null, 'La pantalla ofrece crear una cuenta');
 
+  // La pantalla de primera puesta en marcha solo puede estar abierta mientras no
+  // exista ninguna cuenta. Con la base sembrada tiene que estar cerrada: si
+  // siguiera abierta, cualquiera podría reclamar un administrador.
+  const arranque = await fetch(`${BASE}/configuracion-inicial`, { redirect: 'manual' });
+  const destinoArranque = arranque.headers.get('location') ?? '';
+  comprobar(
+    arranque.status === 307 && destinoArranque.includes('/entrar'),
+    'La configuración inicial está cerrada cuando ya hay cuentas',
+    `HTTP ${arranque.status} → ${destinoArranque}`,
+  );
+
   if (!formAlta) return;
 
   // ── 2. Crear una cuenta y entrar con ella ─────────────────

@@ -6,6 +6,7 @@ import { IconoAlerta, IconoDespacho } from '@/components/ui/Iconos';
 import { LimpiarPaginasGuardadas } from '@/components/pwa/LimpiarPaginas';
 import { empresa } from '@/config/empresa';
 import { CLAVE_DEMO as CLAVE_DEMO_COMPARTIDA, CUENTAS_DEMO } from '@/lib/auth/demo';
+import { hayUsuarios } from '@/db/queries/usuarios';
 import { sesionActual } from '@/lib/auth/sesion';
 import { descripcionRol, etiquetaRol } from '@/lib/auth/permisos';
 import { entrar } from './actions';
@@ -58,6 +59,11 @@ export default async function PaginaEntrar({
   // Si ya hay sesión, no tiene sentido volver a pedir credenciales.
   const sesion = await sesionActual();
   if (sesion) redirect('/');
+
+  // Sin ninguna cuenta creada no hay nada que hacer aquí: se manda a la primera
+  // puesta en marcha, que es la única puerta que está abierta en ese momento.
+  // Las dos condiciones son complementarias, así que no pueden rebotarse.
+  if (!(await hayUsuarios())) redirect('/configuracion-inicial');
 
   const sp = await searchParams;
   const error = primero(sp.error);

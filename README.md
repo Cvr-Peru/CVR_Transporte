@@ -608,6 +608,7 @@ npm run verificar-permisos  # cada rol entra exactamente donde le toca
 npm run verificar-mi-ruta   # el conductor entrega con foto, y no puede tocar lo ajeno
 npm run verificar-pedidos   # el analizador de chats y el circuito del buzón
 npm run verificar-usuarios  # crear cuentas, entrar con ellas y los frenos de administración
+npm run verificar-arranque  # el primer administrador, sobre una base sin ninguna cuenta
 ```
 
 `verificar-permisos`, `verificar-mi-ruta`, `verificar-pedidos` y `verificar-usuarios`
@@ -616,6 +617,17 @@ necesitan el servidor arrancado y la base sembrada. Las tres últimas **escriben
 regenerar los datos con `npm run seed`.
 `verificar-pedidos` empieza probando el analizador de chats, que es lógica pura y se ejecuta
 sin servidor: es donde de verdad se decide si esa función ahorra trabajo o lo crea.
+
+`verificar-arranque` es aparte, porque necesita lo contrario que las demás: una base **sin
+ninguna cuenta**. El ciclo es:
+
+```bash
+npm run build
+SIN_CUENTAS_DEMO=1 node scripts/seed.ts
+SIN_CUENTAS_DEMO=1 npm start
+npm run verificar-arranque
+npm run seed        # devuelve la base al estado de demostración
+```
 
 El primer comando merece una explicación. Windows y macOS **no distinguen mayúsculas**
 en las rutas de archivo, pero Linux sí. Un `import` con la grafía equivocada compila sin
@@ -650,10 +662,11 @@ Railway crea el servicio y le asigna una `DATABASE_URL`. No hay que configurarla
 ### 3. Crear la aplicación
 
 1. **New** → **GitHub Repo** y elige el repositorio.
-2. En el servicio de la aplicación, pestaña **Variables**, añade dos variables:
+2. En el servicio de la aplicación, pestaña **Variables**, añade tres variables:
    ```
-   DATABASE_URL = ${{Postgres.DATABASE_URL}}
-   TZ           = America/Lima
+   DATABASE_URL      = ${{Postgres.DATABASE_URL}}
+   TZ                = America/Lima
+   SIN_CUENTAS_DEMO  = 1
    ```
    La primera es una referencia al servicio de base de datos (así la cadena de conexión
    se mantiene sola aunque cambie); el nombre `Postgres` debe coincidir con el que le
@@ -664,11 +677,30 @@ Railway crea el servicio y le asigna una `DATABASE_URL`. No hay que configurarla
    en Perú (UTC-5), sin esta variable a partir de las 19:00 el sistema consideraría
    que ya es el día siguiente: los despachos del día, los indicadores y los vencimientos
    saldrían corridos. Ajusta el valor a la zona de la empresa.
+
+   **`SIN_CUENTAS_DEMO=1`** hace que la siembra cree los datos de ejemplo —clientes,
+   vehículos, rutas, envíos— pero **ninguna cuenta**. Es lo que quieres en un despliegue
+   de verdad: sin él se crearían cuatro cuentas con la contraseña `demo1234`, que está
+   escrita en este mismo README. Sin cuentas, la primera la creas tú desde el navegador
+   (ver el paso 4).
 3. En **Settings**, comprueba que quede así:
    - **Build Command:** `npm run build`
    - **Start Command:** `npm start`
    - **Healthcheck Path:** `/api/salud`
 4. En **Networking**, pulsa *Generate Domain* para obtener la URL pública.
+5. Abre esa URL. Como no hay ninguna cuenta, la aplicación te lleva sola a
+   **`/configuracion-inicial`**: escribe tu nombre, tu correo y la contraseña que quieras,
+   y entrarás directamente como **administración**. A partir de ese momento esa pantalla
+   se cierra para siempre.
+6. El resto de tu equipo lo das de alta desde **Configuración → Usuarios y permisos**, en
+   la propia aplicación. No hace falta tocar la consola para nada.
+
+> **La ventana del primer administrador.** Mientras no exista ninguna cuenta, quien abra
+> la URL puede reclamar esa primera cuenta. Es el problema clásico del arranque en frío y
+> se resuelve igual que en cualquier instalación: créala nada más desplegar. Si te preocupa,
+> despliega con `SIN_CUENTAS_DEMO` sin definir, entra con la cuenta de ejemplo, crea la
+> tuya, desactiva las cuatro y solo entonces pon `SIN_CUENTAS_DEMO=1` para los siguientes
+> despliegues.
 
 El archivo `railway.json` del repositorio ya declara el build, el arranque y el
 healthcheck, de modo que el paso 3 suele aplicarse solo. Railway está migrando su
@@ -694,7 +726,7 @@ los mismos valores se ponen a mano en el panel.
 | **Ahora sí puedes escalar** | PostgreSQL admite varias conexiones a la vez, así que la aplicación puede tener más de una réplica (SQLite no lo permitía) |
 | **Configura copias de seguridad** | El servicio PostgreSQL de Railway permite backups. Actívalos antes de meter datos reales |
 | **Empezar de cero** | `railway run npm run seed` borra y regenera los datos de ejemplo |
-| **Cuentas de demostración** | Los datos de ejemplo crean cuatro cuentas con la contraseña `demo1234`. Desactívalas antes de usar el sistema con datos reales, y no dejes `MOSTRAR_ACCESOS_DEMO` activo en producción |
+| **Cuentas de demostración** | Con `SIN_CUENTAS_DEMO=1` no se crea ninguna y la primera cuenta la haces tú desde `/configuracion-inicial`. Si despliegas sin esa variable, se crean cuatro con la contraseña `demo1234`: desactívalas antes de usar el sistema con datos reales, y no dejes `MOSTRAR_ACCESOS_DEMO` activo en producción |
 
 ### Comprobar que quedó bien
 

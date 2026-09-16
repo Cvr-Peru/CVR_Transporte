@@ -42,6 +42,18 @@ export async function listarUsuarios(): Promise<UsuarioResumen[]> {
   );
 }
 
+/**
+ * ¿Hay alguna cuenta creada?
+ *
+ * Es la pregunta que decide si la aplicación está recién instalada. Mientras no
+ * haya ninguna, la pantalla de configuración inicial está abierta; en cuanto
+ * existe una, se cierra para siempre.
+ */
+export async function hayUsuarios(): Promise<boolean> {
+  const fila = await get<{ n: number }>('SELECT COUNT(*) AS n FROM usuarios');
+  return Number(fila?.n ?? 0) > 0;
+}
+
 export interface ResumenUsuarios {
   total: number;
   activos: number;

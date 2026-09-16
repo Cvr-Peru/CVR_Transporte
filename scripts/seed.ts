@@ -926,18 +926,15 @@ await transaccion(async () => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// 9. Usuarios de demostración
+// 9. Usuarios
 // ─────────────────────────────────────────────────────────────
-// Cada rol tiene su cuenta para poder probar los permisos de verdad. La
-// contraseña se deriva con scrypt igual que las de producción: el generador no
-// se salta la seguridad.
-//
-// En un despliegue real estas cuentas hay que borrarlas y crear las de verdad
-// con `npm run usuario -- crear`.
-//
-// La contraseña y las cuentas vienen de `src/lib/auth/demo.ts`, el mismo sitio
-// que usa la pantalla de entrada: si estuvieran duplicadas aquí, un cambio en
-// una dejaría botones de acceso que no funcionan.
+// Con `SIN_CUENTAS_DEMO=1` no se crea ninguna cuenta. Es lo que se usa en un
+// despliegue de verdad: los datos de ejemplo sirven para ver la aplicación
+// funcionando, pero dejar cuatro cuentas con una contraseña escrita en el README
+// es un agujero. En ese caso la primera cuenta se crea desde el navegador, en
+// `/configuracion-inicial`, y quien la crea decide su propia contraseña.
+const crearCuentasDemo = process.env.SIN_CUENTAS_DEMO !== '1';
+
 const salDemo = generarSal();
 const hashDemo = await hashClave(CLAVE_DEMO, salDemo);
 
@@ -949,17 +946,19 @@ const hashDemo = await hashClave(CLAVE_DEMO, salDemo);
  * conductor aparecería vacío, que es justo lo contrario de lo que se quiere
  * enseñar. El nombre también se toma de ahí para que coincida con la realidad.
  */
-const conductorDemo = await get<{ id: number; nombre: string }>(
-  `SELECT c.id, c.nombre
-   FROM rutas r
-   JOIN conductores c ON c.id = r.conductor_id
-   WHERE r.fecha = $1 AND r.estado = 'en_curso'
-   ORDER BY r.id
-   LIMIT 1`,
-  aISO(HOY),
-);
+const conductorDemo = crearCuentasDemo
+  ? await get<{ id: number; nombre: string }>(
+      `SELECT c.id, c.nombre
+       FROM rutas r
+       JOIN conductores c ON c.id = r.conductor_id
+       WHERE r.fecha = $1 AND r.estado = 'en_curso'
+       ORDER BY r.id
+       LIMIT 1`,
+      aISO(HOY),
+    )
+  : null;
 
-for (const usuario of CUENTAS_DEMO) {
+for (const usuario of crearCuentasDemo ? CUENTAS_DEMO : []) {
   const conductorId = usuario.esConductor ? (conductorDemo?.id ?? null) : null;
   const nombre = usuario.esConductor ? (conductorDemo?.nombre ?? 'Conductor de prueba') : usuario.nombre;
 
@@ -994,6 +993,13 @@ if (conductorDemo) {
   );
 }
 
+if (!crearCuentasDemo) {
+  console.log('');
+  console.log('  No se han creado cuentas de ejemplo (SIN_CUENTAS_DEMO=1).');
+  console.log('  Crea la primera cuenta de administración abriendo /configuracion-inicial');
+  console.log('  en la aplicación. Mientras no exista ninguna, esa pantalla estará abierta.');
+}
+
 // ─────────────────────────────────────────────────────────────
 // Resumen
 // ─────────────────────────────────────────────────────────────
@@ -1007,9 +1013,17 @@ console.log(`\n  Base de datos de ${empresa.nombre} generada en: ${descripcionMo
 console.log(conteos.map((c) => '   ' + c).join('\n'));
 console.log(`\n  Rango de fechas: ${aISO(sumarDias(HOY, -45))} → ${aISO(sumarDias(HOY, 3))}`);
 
-console.log('\n  Accesos de demostración (contraseña: ' + CLAVE_DEMO + ')');
-for (const u of CUENTAS_DEMO) {
-  console.log(`    ${u.email.padEnd(28)} ${u.rol}`);
+if (crearCuentasDemo) {
+  console.log('\n  Accesos de demostración (contraseña: ' + CLAVE_DEMO + ')');
+  for (const u of CUENTAS_DEMO) {
+    console.log(`    ${u.email.padEnd(28)} ${u.rol}`);
+  }
+} else {
+  // Anunciar unas cuentas que no se han creado sería peor que no decir nada:
+  // alguien las probaría y no entendería por qué no entran.
+  console.log('\n  Sin cuentas de ejemplo (SIN_CUENTAS_DEMO=1).');
+  console.log('  Crea la primera cuenta de administración en /configuracion-inicial,');
+  console.log('  en la aplicación. Mientras no exista ninguna, esa pantalla está abierta.');
 }
 console.log('');
 
