@@ -360,6 +360,11 @@ async function principal() {
       'La foto se marca como caché privada',
       imagenServida.headers.get('cache-control') ?? '(sin cabecera)',
     );
+    comprobar(
+      /\bsandbox\b/.test(imagenServida.headers.get('content-security-policy') ?? ''),
+      'La foto se sirve en un entorno aislado, sin poder ejecutar código',
+      imagenServida.headers.get('content-security-policy') ?? '(sin cabecera)',
+    );
 
     // Sin sesión no puede salir de aquí: es la cara de una persona.
     const sinSesion = await fetch(`${BASE}/api/foto/${idFotoPropia}`, { redirect: 'manual' });
@@ -452,13 +457,33 @@ async function principal() {
     const vistaAdmin = await ver(`/mi-ruta?ruta=${paradaAjena.ruta}`, cookieAdmin);
     const formAdmin = formularioCon(vistaAdmin.html, 'paradaId', 'tipo');
     if (formAdmin) {
+      // La misma entrega sirve para comprobar que un SVG no entra como «foto»,
+      // ni siquiera declarando que es un PNG. Un SVG puede llevar JavaScript, y la
+      // foto se abre en una pestaña del mismo dominio con la sesión de quien la
+      // mira: sería una forma de que un conductor actuara como administrador.
+      const fotosAntes = new Set(fotosEn(vistaAdmin.html));
+      const svgMalicioso = new File(
+        ['<svg xmlns="http://www.w3.org/2000/svg"><script>alert(document.domain)</script></svg>'],
+        'entrega.png',
+        { type: 'image/png' },
+      );
+
       const entregaAdmin = await enviarAccion('/mi-ruta', cookieAdmin, formAdmin, {
         receptor: 'Entregado por despacho',
+        foto: svgMalicioso,
       });
       comprobar(
         entregaAdmin.includes('hecho=entrega'),
         'Administración puede registrar una entrega en nombre del conductor',
         `redirigió a ${entregaAdmin}`,
+      );
+
+      const tras = await ver(`/mi-ruta?ruta=${paradaAjena.ruta}`, cookieAdmin);
+      const fotosColadas = fotosEn(tras.html).filter((id) => !fotosAntes.has(id));
+      comprobar(
+        fotosColadas.length === 0,
+        'Un SVG disfrazado de PNG no se guarda como foto de entrega',
+        `fotos nuevas: ${fotosColadas.join(', ') || 'ninguna'}`,
       );
     } else {
       comprobar(false, 'Administración ve la parada pendiente de otra ruta');

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { get } from '@/db/client';
 import { aBytes } from '@/lib/binario';
+import { cabecerasImagen, detectarTipoImagen } from '@/lib/imagenes';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,21 +17,20 @@ export const dynamic = 'force-dynamic';
  * subir un logo nuevo, el navegador pide uno distinto y no enseña el anterior.
  */
 export async function GET() {
-  const fila = await get<{ logo: unknown; logo_mime: string | null }>(
-    'SELECT logo, logo_mime FROM configuracion WHERE id = 1',
-  );
+  const fila = await get<{ logo: unknown }>('SELECT logo FROM configuracion WHERE id = 1');
 
+  // Que el logo sea público hace más importante, no menos, que solo salga un
+  // mapa de bits: el tipo se deduce de los bytes y un SVG guardado no se sirve.
   const datos = aBytes(fila?.logo);
-  if (datos.byteLength === 0) {
+  const tipo = detectarTipoImagen(datos);
+  if (!tipo) {
     return new NextResponse('Esta instalación no tiene logo.', { status: 404 });
   }
 
-  return new NextResponse(new Blob([datos], { type: fila?.logo_mime || 'image/png' }), {
+  return new NextResponse(new Blob([datos], { type: tipo }), {
     headers: {
-      'Content-Type': fila?.logo_mime || 'image/png',
-      'Content-Length': String(datos.byteLength),
+      ...cabecerasImagen(tipo, datos.byteLength),
       'Cache-Control': 'public, max-age=31536000, immutable',
-      'X-Content-Type-Options': 'nosniff',
     },
   });
 }

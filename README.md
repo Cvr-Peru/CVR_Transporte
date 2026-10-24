@@ -40,7 +40,9 @@ npm start        # siembra los datos si faltan y sirve en el puerto de $PORT
 `npm run seed` se puede repetir cuantas veces quieras: borra y reconstruye la base de
 datos con datos coherentes y siempre relativos a la fecha de hoy, así que el sistema
 nunca se ve "viejo". `npm start` en cambio usa `--si-falta`: solo siembra si la base
-está vacía, para no borrar los datos que ya haya (importante al desplegar).
+no tiene **ninguna fila en ninguna tabla**, para no borrar los datos que ya haya
+(importante al desplegar). Contra un PostgreSQL de verdad (`DATABASE_URL`) con datos,
+`npm run seed` se niega a borrar si no le añades `-- --borrar-todo`.
 
 ---
 
@@ -770,8 +772,11 @@ los mismos valores se ponen a mano en el panel.
   (`force-dynamic`), así que `next build` no las ejecuta.
 - **El sembrado ocurre al arrancar, no al compilar.** `npm start` ejecuta
   `node scripts/seed.ts --si-falta` antes de `next start`. Con PostgreSQL vacío crea el
-  esquema y genera los 45 días de operación; las siguientes veces comprueba si la tabla
-  `rutas` tiene filas y, si las tiene, no toca nada.
+  esquema y genera los 45 días de operación. Si cualquier tabla tiene alguna fila, no
+  borra nada: solo crea las tablas e índices nuevos que traiga la versión, porque el
+  esquema es todo `IF NOT EXISTS`. Antes bastaba con que `rutas` estuviera vacía para
+  regenerarlo todo, y una instalación real que aún no tuviera rutas perdía usuarios,
+  clientes y pedidos en el siguiente despliegue.
 - **`PORT` lo pone Railway.** No lo definas en las variables: la plataforma inyecta el
   suyo y `next start` lo respeta automáticamente.
 
@@ -782,7 +787,7 @@ los mismos valores se ponen a mano en el panel.
 | **Ya no hace falta volumen** | Los datos están en el servicio PostgreSQL, no en el contenedor. Un despliegue nuevo no borra nada |
 | **Ahora sí puedes escalar** | PostgreSQL admite varias conexiones a la vez, así que la aplicación puede tener más de una réplica (SQLite no lo permitía) |
 | **Configura copias de seguridad** | El servicio PostgreSQL de Railway permite backups. Actívalos antes de meter datos reales |
-| **Empezar de cero** | `railway run npm run seed` borra y regenera los datos de ejemplo |
+| **Empezar de cero** | `railway run npm run seed -- --borrar-todo` borra **todo**, incluidos usuarios y facturas, y regenera los datos de ejemplo. Sin `--borrar-todo` se niega, para que no se lance por error contra la base de un cliente |
 | **Cuentas de demostración** | Con `SIN_CUENTAS_DEMO=1` no se crea ninguna y la primera cuenta la haces tú desde `/configuracion-inicial`. Si despliegas sin esa variable, se crean cuatro con la contraseña `demo1234`: desactívalas antes de usar el sistema con datos reales, y no dejes `MOSTRAR_ACCESOS_DEMO` activo en producción |
 
 ### Comprobar que quedó bien
@@ -882,7 +887,8 @@ pensados para reutilizarse tal cual en esa siguiente etapa.
 
 **Quiero datos nuevos.** Ejecuta `npm run seed`. Es idempotente: borra las tablas y
 regenera todo. En cambio `npm start` solo siembra si la base está vacía, para no borrar
-datos reales.
+datos reales. Con `DATABASE_URL` (Docker o Railway) y datos dentro, hay que pedirlo
+explícitamente: `npm run seed -- --borrar-todo`.
 
 **El puerto no es el que esperaba.** `npm run dev` usa el 3100. `npm start` respeta la
 variable `PORT` (por defecto 3000). Para usar el 3100 en local crea un archivo `.env`

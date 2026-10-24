@@ -193,27 +193,54 @@ const ESTACIONES = ['Primax Av. Arequipa', 'Repsol Javier Prado', 'Pecsa La Mari
 // ─────────────────────────────────────────────────────────────
 // Preparación de la base de datos
 // ─────────────────────────────────────────────────────────────
-// Con --si-falta el script no regenera nada si la base ya tiene datos. Se usa
-// como paso previo al arranque en el servidor, donde solo interesa sembrar la
-// primera vez: así los datos creados por el usuario no se pierden en cada
-// despliegue. Ya no hay archivo que comprobar: la base se considera con datos
-// si la tabla `rutas` tiene filas.
-if (process.argv.includes('--si-falta')) {
-  let rutas = 0;
-  try {
-    // Si la tabla todavía no existe, el SELECT falla y se trata como base vacía.
-    rutas = Number((await escalar<number>('SELECT COUNT(*) AS n FROM rutas')) ?? 0);
-  } catch {
-    rutas = 0;
+/**
+ * Filas que hay en total en las tablas de la aplicación. Una tabla que todavía
+ * no existe cuenta como vacía.
+ *
+ * Se mira **cada** tabla y no una sola de muestra. Antes bastaba con que `rutas`
+ * estuviera vacía para darlo todo por vacío, y una instalación real sin rutas
+ * todavía —pero ya con su administrador, sus clientes y sus pedidos— se borraba
+ * entera en el siguiente arranque.
+ */
+async function filasExistentes(): Promise<number> {
+  let total = 0;
+  for (const tabla of TABLAS_EN_ORDEN_DE_BORRADO) {
+    try {
+      total += Number((await escalar<number>(`SELECT COUNT(*) AS n FROM ${tabla}`)) ?? 0);
+    } catch {
+      // La tabla no existe: no hay nada que perder en ella.
+    }
   }
+  return total;
+}
 
-  if (rutas > 0) {
-    console.log(`\n  La base de datos ya contiene datos (${rutas} rutas).`);
-    console.log(`  Motor: ${descripcionMotor()}`);
-    console.log('  No se regenera nada (opción --si-falta).\n');
-    await cerrarMotor();
-    process.exit(0);
-  }
+const filas = await filasExistentes();
+
+// Con --si-falta el script solo siembra una base **sin ninguna fila**. Se usa
+// como paso previo al arranque en el servidor: cualquier dato que exista, sea de
+// ejemplo o real, se conserva. Lo único que se hace con una base ya poblada es
+// crear las tablas e índices nuevos (el esquema es todo `IF NOT EXISTS`), para
+// que una versión nueva del programa arranque sobre una base anterior.
+if (process.argv.includes('--si-falta') && filas > 0) {
+  await ejecutarScript(SCHEMA_SQL);
+  console.log(`\n  La base de datos ya contiene datos (${filas} filas).`);
+  console.log(`  Motor: ${descripcionMotor()}`);
+  console.log('  No se borra ni se regenera nada (opción --si-falta).\n');
+  await cerrarMotor();
+  process.exit(0);
+}
+
+// Regenerar a mano borra todo. En la base local de PGlite son datos de ejemplo
+// y se rehace sin preguntar, como siempre. Contra un PostgreSQL de verdad
+// (`DATABASE_URL`) puede ser la base de un cliente, así que hay que pedirlo
+// explícitamente: un `npm run seed` lanzado contra el servidor equivocado no
+// debe poder borrar la operación de una empresa.
+if (filas > 0 && process.env.DATABASE_URL && !process.argv.includes('--borrar-todo')) {
+  console.error(`\n  La base de datos ${descripcionMotor()} contiene ${filas} filas.`);
+  console.error('  Regenerar los datos de ejemplo las borraría todas, incluidos usuarios y facturas.');
+  console.error('  Si de verdad quieres empezar de cero: npm run seed -- --borrar-todo\n');
+  await cerrarMotor();
+  process.exit(1);
 }
 
 // Se borran todas las tablas y se vuelven a crear: la base queda limpia y las

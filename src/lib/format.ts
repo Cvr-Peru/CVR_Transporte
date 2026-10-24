@@ -70,14 +70,23 @@ export function moneda(n: number | null | undefined): string {
   return fmtMoneda.format(Number(n ?? 0));
 }
 
-/** Versión compacta para KPIs: $1,2 M */
+/**
+ * Símbolo de la moneda configurada («S/» para soles). Sale de `Intl` y no se
+ * escribe a mano: con un «$» fijo, los indicadores de una empresa peruana
+ * parecían estar en dólares.
+ */
+const simboloMoneda =
+  fmtMoneda.formatToParts(0).find((p) => p.type === 'currency')?.value ?? empresa.moneda;
+
+/** Versión compacta para KPIs: S/ 1,2 M */
 export function monedaCorta(n: number | null | undefined): string {
   const v = Number(n ?? 0);
   const abs = Math.abs(v);
-  if (abs >= 1_000_000_000) return `$${fmtNumero.format(v / 1_000_000_000)} MM`;
-  if (abs >= 1_000_000) return `$${fmtNumero.format(v / 1_000_000)} M`;
-  if (abs >= 1_000) return `$${fmtNumeroEntero.format(v / 1_000)} K`;
-  return `$${fmtNumeroEntero.format(v)}`;
+  const signo = v < 0 ? '-' : '';
+  if (abs >= 1_000_000_000) return `${signo}${simboloMoneda} ${fmtNumero.format(abs / 1_000_000_000)} MM`;
+  if (abs >= 1_000_000) return `${signo}${simboloMoneda} ${fmtNumero.format(abs / 1_000_000)} M`;
+  if (abs >= 1_000) return `${signo}${simboloMoneda} ${fmtNumeroEntero.format(abs / 1_000)} K`;
+  return `${signo}${simboloMoneda} ${fmtNumeroEntero.format(abs)}`;
 }
 
 export function numero(n: number | null | undefined, decimales = 2): string {

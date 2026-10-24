@@ -7,6 +7,7 @@ import { empresa, parametros } from '@/config/empresa';
 import { requerirParadaPropia, requerirPermiso } from '@/lib/auth/sesion';
 import { aCoordenada, aNumero, aTexto } from '@/lib/formulario';
 import { aISOCompleto, hoyISO } from '@/lib/format';
+import { detectarTipoImagen } from '@/lib/imagenes';
 import { optimizarRuta } from '@/lib/rutas/optimizar';
 import { coordenadaEnZona, direccionFalsa, zonaPorNombre } from '@/lib/zonas';
 
@@ -42,9 +43,10 @@ interface FotoPreparada {
  *
  * El navegador ya la ha reducido a un JPEG pequeño (ver `FotoEntrega`), pero eso
  * es una comodidad, no una garantía: cualquiera puede enviar el formulario a
- * mano. Aquí se comprueba el tipo, el tamaño y que no venga vacía. Lo que no
- * pase el filtro se descarta sin más: la entrega se registra igual, solo que sin
- * foto.
+ * mano. Aquí se comprueba el tamaño y que sea de verdad un JPEG, PNG o WebP
+ * mirando sus bytes (ver `src/lib/imagenes.ts`): un SVG enviado como
+ * `image/svg+xml` no pasa. Lo que no pase el filtro se descarta sin más: la
+ * entrega se registra igual, solo que sin foto.
  */
 async function prepararFoto(
   valor: FormDataEntryValue | null,
@@ -52,15 +54,16 @@ async function prepararFoto(
   lng: number | null,
 ): Promise<FotoPreparada | null> {
   if (!(valor instanceof File) || valor.size === 0) return null;
-  if (!valor.type.startsWith('image/')) return null;
   if (valor.size > TAMANO_MAXIMO_FOTO) return null;
 
   // Leer el archivo no debería fallar, pero si el cuerpo llega cortado es mejor
   // registrar la entrega sin foto que perderla entera.
   try {
     const datos = new Uint8Array(await valor.arrayBuffer());
-    if (datos.byteLength === 0) return null;
-    return { datos, tipoMime: valor.type, tamano: datos.byteLength, lat, lng };
+    // Se guarda el tipo que dicen los bytes, no el que declara el navegador.
+    const tipoMime = detectarTipoImagen(datos);
+    if (!tipoMime) return null;
+    return { datos, tipoMime, tamano: datos.byteLength, lat, lng };
   } catch {
     return null;
   }

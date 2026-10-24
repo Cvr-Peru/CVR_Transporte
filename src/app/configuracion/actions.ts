@@ -6,6 +6,7 @@ import { run } from '@/db/client';
 import { requerirPermiso } from '@/lib/auth/sesion';
 import { aTexto } from '@/lib/formulario';
 import { ahoraTexto } from '@/lib/formulario';
+import { detectarTipoImagen } from '@/lib/imagenes';
 
 /**
  * Guarda la identidad de la empresa.
@@ -29,18 +30,20 @@ interface LogoPreparado {
  * Valida la imagen que llega.
  *
  * El navegador ya la ha reducido a un PNG pequeño, pero eso es comodidad, no
- * garantía: el formulario se puede enviar a mano. Lo que no pase el filtro se
- * descarta y se conserva el logo anterior.
+ * garantía: el formulario se puede enviar a mano. El logo se sirve en público y
+ * en el mismo dominio, así que solo se acepta un JPEG, PNG o WebP comprobado por
+ * sus bytes: un SVG podría llevar código. Lo que no pase el filtro se descarta y
+ * se conserva el logo anterior.
  */
 async function prepararLogo(valor: FormDataEntryValue | null): Promise<LogoPreparado | null> {
   if (!(valor instanceof File) || valor.size === 0) return null;
-  if (!valor.type.startsWith('image/')) return null;
   if (valor.size > TAMANO_MAXIMO_LOGO) return null;
 
   try {
     const datos = new Uint8Array(await valor.arrayBuffer());
-    if (datos.byteLength === 0) return null;
-    return { datos, mime: valor.type };
+    const mime = detectarTipoImagen(datos);
+    if (!mime) return null;
+    return { datos, mime };
   } catch {
     return null;
   }
