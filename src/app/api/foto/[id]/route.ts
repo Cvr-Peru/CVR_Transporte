@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { get } from '@/db/client';
 import { aBytes } from '@/lib/binario';
+import { cabecerasImagen, detectarTipoImagen } from '@/lib/imagenes';
 import { puede } from '@/lib/auth/permisos';
 import { sesionActual } from '@/lib/auth/sesion';
 
@@ -21,6 +22,10 @@ export const dynamic = 'force-dynamic';
  *    `/api/foto/1`, `/api/foto/2`… para ver las entregas de toda la empresa.
  *  - La cabecera es `Cache-Control: private`, para que ningún proxy intermedio
  *    guarde la imagen y se la devuelva a otro.
+ *  - El tipo se deduce de los bytes y no de la columna `tipo_mime`, y lo que no
+ *    sea un JPEG, PNG o WebP no se sirve. La foto se abre en una pestaña del
+ *    mismo dominio: un SVG guardado como «foto» ejecutaría código con la sesión
+ *    de quien la mira.
  *
  * Deliberadamente **no** se expone en la página pública de rastreo `/rastrear`:
  * el cliente final puede seguir su paquete sin ver la cara de quien lo recibió.
@@ -47,10 +52,9 @@ export async function GET(
 
   const foto = await get<{
     datos: unknown;
-    tipo_mime: string;
     conductor_id: number | null;
   }>(
-    `SELECT f.datos, f.tipo_mime, r.conductor_id
+    `SELECT f.datos, r.conductor_id
      FROM fotos_entrega f
      JOIN rutas r ON r.id = f.ruta_id
      WHERE f.id = $1`,
@@ -72,14 +76,17 @@ export async function GET(
     return new NextResponse('La foto está vacía.', { status: 500 });
   }
 
-  return new NextResponse(new Blob([datos], { type: foto.tipo_mime || 'image/jpeg' }), {
+  const tipo = detectarTipoImagen(datos);
+  if (!tipo) {
+    return new NextResponse('Esta foto no es una imagen que se pueda mostrar.', { status: 415 });
+  }
+
+  return new NextResponse(new Blob([datos], { type: tipo }), {
     headers: {
-      'Content-Type': foto.tipo_mime || 'image/jpeg',
-      'Content-Length': String(datos.byteLength),
+      ...cabecerasImagen(tipo, datos.byteLength),
       // `private`: es la cara de una persona, no la cachee ningún intermediario.
       'Cache-Control': 'private, max-age=3600',
-      'Content-Disposition': `inline; filename="entrega-${fotoId}.jpg"`,
-      'X-Content-Type-Options': 'nosniff',
+      'Content-Disposition': `inline; filename="entrega-${fotoId}.${tipo.slice('image/'.length)}"`,
     },
   });
 }
