@@ -1,5 +1,8 @@
 import Link from 'next/link';
 import { registrarMantenimiento } from './actions';
+import { AvisoExito } from '@/components/formulario/Campos';
+import { get } from '@/db/client';
+import { normalizarPlaca } from '@/lib/maestros';
 import { Badge, tonoDeEstado, type Tono } from '@/components/ui/Badge';
 import { Card, CardCabecera, CardCuerpo, RejillaKpi } from '@/components/ui/Card';
 import { EncabezadoPagina } from '@/components/ui/EncabezadoPagina';
@@ -12,6 +15,7 @@ import {
   IconoFinanzas,
   IconoFlota,
   IconoHerramienta,
+  IconoMas,
   IconoReloj,
 } from '@/components/ui/Iconos';
 import { Kpi } from '@/components/ui/Kpi';
@@ -176,6 +180,12 @@ export default async function PaginaFlota({
   // En Next 16 `searchParams` es una Promesa: hay que esperarla siempre.
   const sp = await searchParams;
   const tab = normalizarTab(valorUnico(sp.tab));
+  // El aviso de alta solo se muestra si la unidad existe: el parámetro llega por la
+  // URL y no debe servir para fabricar una confirmación falsa con un enlace.
+  const placaCreada = normalizarPlaca(valorUnico(sp.creada) ?? '');
+  const creada = placaCreada
+    ? (await get<{ placa: string }>('SELECT placa FROM unidades WHERE placa = $1', placaCreada))?.placa
+    : undefined;
 
   const flota = await kpisUnidades();
   const documentos = await kpisDocumentos();
@@ -207,9 +217,25 @@ export default async function PaginaFlota({
                 {plural(documentos.vencidos, 'documento vencido', 'documentos vencidos')}
               </Badge>
             ) : null}
+            {puedeEditar ? (
+              <Link
+                href="/flota/nueva"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-500"
+              >
+                <IconoMas width={15} height={15} />
+                Nueva unidad
+              </Link>
+            ) : null}
           </>
         }
       />
+
+      {creada ? (
+        <AvisoExito>
+          La unidad <span className="num font-medium">{creada}</span> ya está en la flota y se
+          puede asignar a una hoja de ruta.
+        </AvisoExito>
+      ) : null}
 
       {/* Pestañas: enlaces que cambian el query param, sin JavaScript de cliente. */}
       <nav

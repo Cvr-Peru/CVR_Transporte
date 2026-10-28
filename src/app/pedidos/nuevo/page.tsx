@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { Card, CardCabecera, CardCuerpo } from '@/components/ui/Card';
 import { EncabezadoPagina } from '@/components/ui/EncabezadoPagina';
-import { IconoAlerta } from '@/components/ui/Iconos';
+import { IconoAlerta, IconoCliente, IconoMas } from '@/components/ui/Iconos';
+import { Vacio } from '@/components/ui/Vacio';
 import { clientesParaPedidos } from '@/db/queries/pedidos';
+import { puede } from '@/lib/auth/permisos';
 import { requerirPermiso } from '@/lib/auth/sesion';
 import { hoyISO } from '@/lib/format';
 import { ZONAS } from '@/lib/zonas';
@@ -33,9 +35,46 @@ export default async function PaginaNuevoPedido({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requerirPermiso('pedidos', 'editar');
+  const sesion = await requerirPermiso('pedidos', 'editar');
   const sp = await searchParams;
   const clientes = await clientesParaPedidos();
+
+  // Al venir de dar de alta un cliente («Registrar un pedido suyo»), llega ya elegido.
+  const pedido = Number(typeof sp.cliente === 'string' ? sp.cliente : NaN);
+  const clienteInicial = clientes.some((c) => c.id === pedido) ? String(pedido) : '';
+
+  // En una instalación nueva todavía no hay clientes, y sin cliente no hay pedido:
+  // en vez de un desplegable vacío se explica qué falta y quién puede resolverlo.
+  if (clientes.length === 0) {
+    const puedeCrear = puede(sesion.rol, 'clientes', 'editar');
+    return (
+      <>
+        <EncabezadoPagina titulo="Nuevo pedido" />
+        <Card>
+          <Vacio
+            icono={<IconoCliente width={22} height={22} />}
+            titulo="Primero hace falta un cliente"
+            mensaje={
+              puedeCrear
+                ? 'Cada pedido se le cobra a un cliente con su tarifa. Da de alta el primero y vuelve aquí.'
+                : 'Cada pedido se le cobra a un cliente con su tarifa, y todavía no hay ninguno. Pide a administración que dé de alta el primero.'
+            }
+            accion={
+              puedeCrear ? (
+                <Link
+                  href="/clientes/nuevo"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-500"
+                >
+                  <IconoMas width={15} height={15} />
+                  Dar de alta un cliente
+                </Link>
+              ) : null
+            }
+          />
+        </Card>
+      </>
+    );
+  }
 
   const error = typeof sp.error === 'string' ? ERRORES[sp.error] : undefined;
 
@@ -74,7 +113,7 @@ export default async function PaginaNuevoPedido({
             <form action={crearPedido} className="space-y-4">
               <label className="flex flex-col gap-1 text-xs text-slate-400">
                 Cliente que lo manda
-                <select name="clienteId" required defaultValue="" className={CLASE_CAMPO}>
+                <select name="clienteId" required defaultValue={clienteInicial} className={CLASE_CAMPO}>
                   <option value="" disabled>
                     Elige un cliente
                   </option>

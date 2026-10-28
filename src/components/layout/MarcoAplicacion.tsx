@@ -13,6 +13,7 @@ import type { Sesion } from '@/lib/auth/sesion';
 import {
   IconoBuscar,
   IconoCaja,
+  IconoCliente,
   IconoConductor,
   IconoDespacho,
   IconoEquis,
@@ -108,6 +109,7 @@ const GRUPOS: { titulo: string; items: ItemNav[] }[] = [
     items: [
       { href: '/flota', etiqueta: 'Flota', Icono: IconoFlota, modulo: 'flota' },
       { href: '/conductores', etiqueta: 'Conductores', Icono: IconoConductor, modulo: 'conductores' },
+      { href: '/clientes', etiqueta: 'Clientes', Icono: IconoCliente, modulo: 'clientes' },
     ],
   },
   {

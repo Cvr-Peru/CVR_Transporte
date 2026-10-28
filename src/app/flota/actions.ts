@@ -8,10 +8,13 @@
  * Si algo no cuadra, la acción termina sin tocar la base.
  */
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { get, run, transaccion } from '@/db/client';
 import type { EstadoUnidad } from '@/db/tipos';
 import { requerirPermiso } from '@/lib/auth/sesion';
 import { hoyISO, parseFecha } from '@/lib/format';
+import { aNumero, aTexto } from '@/lib/formulario';
+import { normalizarPlaca, TIPOS_UNIDAD, type TipoUnidad } from '@/lib/maestros';
 
 type TipoMantenimiento = 'preventivo' | 'correctivo';
 type EstadoMantenimiento = 'programado' | 'en_taller' | 'completado';
@@ -100,4 +103,100 @@ export async function registrarMantenimiento(formData: FormData): Promise<void> 
   });
 
   revalidatePath('/flota');
+}
+
+/**
+ * Alta de una unidad.
+ *
+ * Además de la ficha, recoge los vencimientos del SOAT y de la revisión técnica,
+ * que son los dos documentos sin los que una unidad no puede circular en Perú. No
+ * son obligatorios en el formulario —puede que se den de alta antes de tenerlos a
+ * mano— pero si llegan se registran ya, para que el semáforo de documentación de
+ * la flota cuente con ellos desde el primer día.
+ */
+export async function crearUnidad(formData: FormData): Promise<void> {
+  await requerirPermiso('flota', 'editar');
+
+  function volver(error: string): never {
+    redirect(`/flota/nueva?error=${error}`);
+  }
+
+  const placa = normalizarPlaca(aTexto(formData.get('placa')) ?? '');
+  const tipo = aTexto(formData.get('tipo')) ?? '';
+  const marca = aTexto(formData.get('marca'));
+  const modelo = aTexto(formData.get('modelo'));
+  const anio = aNumero(formData.get('anio'));
+  const capacidadKg = aNumero(formData.get('capacidadKg'));
+  const capacidadM3 = aNumero(formData.get('capacidadM3'));
+  const km = aNumero(formData.get('km'));
+  const rendimiento = aNumero(formData.get('rendimiento'));
+  const conductorId = aNumero(formData.get('conductorId'));
+  const soat = aTexto(formData.get('soatVence'));
+  const revision = aTexto(formData.get('revisionVence'));
+  const observaciones = aTexto(formData.get('observaciones'));
+
+  const anioMaximo = new Date().getFullYear() + 1;
+
+  if (!placa) volver('placa');
+  if (!(TIPOS_UNIDAD as readonly string[]).includes(tipo)) volver('tipo');
+  if (anio !== null && (!Number.isInteger(anio) || anio < 1980 || anio > anioMaximo)) volver('anio');
+  if (capacidadKg === null || capacidadKg <= 0 || capacidadKg > 60_000) volver('capacidad');
+  if (capacidadM3 !== null && (capacidadM3 < 0 || capacidadM3 > 200)) volver('capacidad');
+  if (km !== null && (km < 0 || km > 5_000_000)) volver('km');
+  if (rendimiento === null || rendimiento <= 0 || rendimiento > 300) volver('rendimiento');
+  if (soat && !parseFecha(soat)) volver('fecha');
+  if (revision && !parseFecha(revision)) volver('fecha');
+
+  const repetida = await get<{ id: number }>(
+    "SELECT id FROM unidades WHERE REPLACE(UPPER(placa), '-', '') = $1",
+    placa,
+  );
+  if (repetida) volver('duplicada');
+
+  if (conductorId !== null) {
+    const conductor = await get<{ id: number }>(
+      "SELECT id FROM conductores WHERE id = $1 AND estado <> 'inactivo'",
+      conductorId,
+    );
+    if (!conductor) volver('conductor');
+  }
+
+  await transaccion(async () => {
+    const { id } = await run(
+      `INSERT INTO unidades
+         (placa, tipo, marca, modelo, anio, capacidad_kg, capacidad_m3, km_actual,
+          rendimiento_esperado, conductor_fijo_id, observaciones)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       RETURNING id`,
+      placa,
+      tipo as TipoUnidad,
+      marca?.slice(0, 60) ?? null,
+      modelo?.slice(0, 60) ?? null,
+      anio,
+      capacidadKg,
+      capacidadM3 ?? 0,
+      km ?? 0,
+      rendimiento,
+      conductorId,
+      observaciones?.slice(0, 300) ?? null,
+    );
+
+    const documentos: [string, string | null][] = [
+      ['soat', soat],
+      ['revision_tecnica', revision],
+    ];
+    for (const [tipoDoc, vence] of documentos) {
+      if (!vence) continue;
+      await run(
+        'INSERT INTO documentos_unidad (unidad_id, tipo, vencimiento) VALUES ($1, $2, $3)',
+        id,
+        tipoDoc,
+        vence,
+      );
+    }
+  });
+
+  revalidatePath('/flota');
+  revalidatePath('/despachos/nuevo');
+  redirect(`/flota?creada=${encodeURIComponent(placa)}`);
 }

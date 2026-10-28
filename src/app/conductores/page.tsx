@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { AvisoExito } from '@/components/formulario/Campos';
 import { Badge, BadgeEstado } from '@/components/ui/Badge';
 import { Card, CardCabecera, CardCuerpo, RejillaKpi } from '@/components/ui/Card';
 import { EncabezadoPagina } from '@/components/ui/EncabezadoPagina';
@@ -6,6 +7,7 @@ import {
   IconoAlerta,
   IconoCheck,
   IconoConductor,
+  IconoMas,
   IconoReloj,
 } from '@/components/ui/Iconos';
 import { Kpi } from '@/components/ui/Kpi';
@@ -18,6 +20,8 @@ import {
   type ConductorDesempeno,
 } from '@/db/queries/conductores';
 import type { Conductor } from '@/db/tipos';
+import { get } from '@/db/client';
+import { puede } from '@/lib/auth/permisos';
 import { requerirPermiso } from '@/lib/auth/sesion';
 import { estadoVencimiento, esOperable } from '@/lib/domain';
 import {
@@ -63,6 +67,17 @@ export default async function PaginaConductores({
   const estado = texto(sp, 'estado');
   const q = texto(sp, 'q');
 
+  const puedeEditar = puede(sesion.rol, 'conductores', 'editar');
+  const puedeUsuarios = puede(sesion.rol, 'usuarios', 'editar');
+  // Solo se confirma un alta que exista: el código llega por la URL.
+  const codigoCreado = texto(sp, 'creado');
+  const creado = codigoCreado
+    ? await get<{ codigo: string; nombre: string }>(
+        'SELECT codigo, nombre FROM conductores WHERE codigo = $1',
+        codigoCreado,
+      )
+    : null;
+
   const rango = rangoMes();
   const kpis = await kpisConductores();
   const conductores = await listarConductores(
@@ -107,9 +122,36 @@ export default async function PaginaConductores({
             >
               Ver liquidaciones
             </Link>
+            {puedeEditar ? (
+              <Link
+                href="/conductores/nuevo"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-500"
+              >
+                <IconoMas width={15} height={15} />
+                Nuevo conductor
+              </Link>
+            ) : null}
           </>
         }
       />
+
+      {creado ? (
+        <AvisoExito
+          accion={
+            puedeUsuarios ? (
+              <Link
+                href="/usuarios"
+                className="rounded-lg border border-emerald-500/40 px-3 py-1.5 text-xs font-medium text-emerald-100 hover:bg-emerald-500/10"
+              >
+                Crearle una cuenta para «Mi ruta»
+              </Link>
+            ) : null
+          }
+        >
+          <span className="font-medium">{creado.nombre}</span> quedó en la plantilla como{' '}
+          <span className="num">{creado.codigo}</span> y ya se le pueden asignar rutas.
+        </AvisoExito>
+      ) : null}
 
       {/* ── Indicadores de la plantilla ───────────────────────── */}
       <RejillaKpi columnas={5}>

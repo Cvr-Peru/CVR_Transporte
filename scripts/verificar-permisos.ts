@@ -40,6 +40,13 @@ const ESPERADO: Record<string, Record<Rol, boolean>> = {
   '/rastreo': { administracion: true, despachador: true, conductor: true, gerencia: true },
   '/flota': { administracion: true, despachador: true, conductor: false, gerencia: true },
   '/conductores': { administracion: true, despachador: true, conductor: false, gerencia: true },
+  // Las altas de los maestros son escritura: solo quien puede editar cada módulo.
+  // Despacho ve la flota y los conductores, pero no los da de alta.
+  '/flota/nueva': { administracion: true, despachador: false, conductor: false, gerencia: false },
+  '/conductores/nuevo': { administracion: true, despachador: false, conductor: false, gerencia: false },
+  // La cartera de clientes lleva tarifas y saldos: es dinero. Despacho no entra.
+  '/clientes': { administracion: true, despachador: false, conductor: false, gerencia: true },
+  '/clientes/nuevo': { administracion: true, despachador: false, conductor: false, gerencia: false },
   '/finanzas': { administracion: true, despachador: false, conductor: false, gerencia: true },
   '/facturacion': { administracion: true, despachador: false, conductor: false, gerencia: true },
   '/liquidaciones': { administracion: true, despachador: false, conductor: false, gerencia: true },

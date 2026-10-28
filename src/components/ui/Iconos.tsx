@@ -201,6 +201,22 @@ export const IconoUsuario = (p: PropsIcono) => (
   </Base>
 );
 
+/** Edificio: la empresa cliente que manda los envíos. */
+export const IconoCliente = (p: PropsIcono) => (
+  <Base {...p}>
+    <path d="M4 21V5.5A1.5 1.5 0 0 1 5.5 4h8A1.5 1.5 0 0 1 15 5.5V21" />
+    <path d="M15 10h3.5a1.5 1.5 0 0 1 1.5 1.5V21" />
+    <path d="M3 21h18M8 8h3M8 12h3M8 16h3" />
+  </Base>
+);
+
+/** Más: dar de alta. */
+export const IconoMas = (p: PropsIcono) => (
+  <Base {...p}>
+    <path d="M12 5v14M5 12h14" />
+  </Base>
+);
+
 /** Sol: se muestra en modo oscuro, porque pulsar lleva al claro. */
 export const IconoSol = (p: PropsIcono) => (
   <Base {...p}>
