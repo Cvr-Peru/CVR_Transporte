@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Card, CardCabecera, CardCuerpo } from '@/components/ui/Card';
 import { EncabezadoPagina } from '@/components/ui/EncabezadoPagina';
-import { IconoAlerta, IconoDespacho } from '@/components/ui/Iconos';
+import { IconoAlerta, IconoCliente, IconoDespacho, IconoMas } from '@/components/ui/Iconos';
 import { Badge, BadgeEstado } from '@/components/ui/Badge';
 import { TablaCaja, Td, Th, Tr } from '@/components/ui/Tabla';
 import { Vacio } from '@/components/ui/Vacio';
@@ -11,6 +11,7 @@ import {
   unidadesAsignables,
 } from '@/db/queries/despachos';
 import { documentosPorVencer } from '@/db/queries/dashboard';
+import { puede } from '@/lib/auth/permisos';
 import { requerirPermiso } from '@/lib/auth/sesion';
 import { entero, etiqueta, hoyISO, numero } from '@/lib/format';
 import { ZONAS } from '@/lib/zonas';
@@ -22,7 +23,7 @@ const CLASE_CAMPO =
   'w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-sm text-slate-200';
 
 export default async function PaginaNuevoDespacho() {
-  await requerirPermiso('despachos', 'editar');
+  const sesion = await requerirPermiso('despachos', 'editar');
 
   const unidades = await unidadesAsignables();
   const conductores = await conductoresAsignables();
@@ -34,6 +35,49 @@ export default async function PaginaNuevoDespacho() {
       .filter((d) => d.vencimiento < hoyISO())
       .map((d) => d.placa),
   );
+
+  // Unidad y conductor pueden quedar «sin asignar», pero el cliente no: el flete
+  // de cada envío sale de su tarifa. En una instalación nueva se explica qué falta
+  // en lugar de dejar un desplegable vacío que haría fallar el formulario.
+  if (clientes.length === 0) {
+    const puedeCrear = puede(sesion.rol, 'clientes', 'editar');
+    return (
+      <>
+        <EncabezadoPagina titulo="Nuevo despacho" />
+        <Card>
+          <Vacio
+            icono={<IconoCliente width={22} height={22} />}
+            titulo="Primero hace falta un cliente"
+            mensaje={
+              puedeCrear
+                ? 'Cada hoja de ruta se hace para un cliente y sus envíos se cobran con su tarifa. Da de alta el primero.'
+                : 'Cada hoja de ruta se hace para un cliente, y todavía no hay ninguno. Pide a administración que dé de alta el primero.'
+            }
+            accion={
+              puedeCrear ? (
+                <Link
+                  href="/clientes/nuevo"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-500"
+                >
+                  <IconoMas width={15} height={15} />
+                  Dar de alta un cliente
+                </Link>
+              ) : null
+            }
+          />
+        </Card>
+      </>
+    );
+  }
+
+  const faltan = [
+    unidades.length === 0
+      ? { texto: 'No hay unidades disponibles.', href: '/flota/nueva', enlace: 'Añadir una unidad', modulo: 'flota' as const }
+      : null,
+    conductores.length === 0
+      ? { texto: 'No hay conductores activos.', href: '/conductores/nuevo', enlace: 'Añadir un conductor', modulo: 'conductores' as const }
+      : null,
+  ].filter((f) => f !== null);
 
   return (
     <>
@@ -58,6 +102,20 @@ export default async function PaginaNuevoDespacho() {
             descripcion="Las paradas se distribuyen dentro del área de la zona elegida y se ordenan por cercanía."
           />
           <CardCuerpo>
+            {faltan.length > 0 ? (
+              <div className="mb-4 space-y-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                {faltan.map((f) => (
+                  <p key={f.href}>
+                    {f.texto} La hoja de ruta se puede crear igual y asignarse después.{' '}
+                    {puede(sesion.rol, f.modulo, 'editar') ? (
+                      <Link href={f.href} className="font-medium underline underline-offset-2">
+                        {f.enlace}
+                      </Link>
+                    ) : null}
+                  </p>
+                ))}
+              </div>
+            ) : null}
             <form action={crearDespacho} className="space-y-4">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <label className="flex flex-col gap-1 text-xs text-slate-400">
