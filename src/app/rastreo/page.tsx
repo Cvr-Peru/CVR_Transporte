@@ -473,7 +473,7 @@ export default async function PaginaRastreo({ searchParams }: PropsPagina) {
               <input
                 name="guia"
                 defaultValue={guiaParam}
-                placeholder="Ej. TR-20260214-00042"
+                placeholder="Ej. TR-20261024-7KQ4MX"
                 className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-sm text-slate-200"
               />
             </label>
@@ -632,7 +632,7 @@ export default async function PaginaRastreo({ searchParams }: PropsPagina) {
                   <p className="mt-0.5 text-xs text-amber-200/80">
                     No hay ningún envío con ese número. Verifica el dato con quien despachó
                     el paquete: las guías de esta demostración tienen el formato
-                    TR-AAAAMMDD-NNNNN y se pueden consultar desde el módulo de despachos.
+                    TR-AAAAMMDD-XXXXXX (fecha y seis caracteres al azar) y se pueden consultar desde el módulo de despachos.
                   </p>
                 </div>
               </div>

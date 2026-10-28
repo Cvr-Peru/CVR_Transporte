@@ -280,7 +280,7 @@ async function parteHttp(): Promise<void> {
   // celda (`>TR-…<`), mientras que el término buscado aparece también en el cuadro
   // de búsqueda como valor de un atributo. Sin esta distinción, la comprobación
   // daba por bueno cualquier filtro.
-  const guia = conNuevo.html.match(/>(TR-\d{8}-\d{5})<[\s\S]{0,900}?Prueba Automática/)?.[1] ?? null;
+  const guia = conNuevo.html.match(/>(TR-\d{8}-[0-9A-Z]{6})<[\s\S]{0,900}?Prueba Automática/)?.[1] ?? null;
   comprobar(guia !== null, 'Se identifica la guía del pedido nuevo', String(guia));
 
   if (!pedidoNuevo || !guia) return;

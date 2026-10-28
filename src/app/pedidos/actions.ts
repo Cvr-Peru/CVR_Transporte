@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { empresa } from '@/config/empresa';
 import { all, get, run, transaccion } from '@/db/client';
-import { siguienteNumeroDeGuia } from '@/db/queries/pedidos';
+import { guiaNueva } from '@/db/queries/pedidos';
 import type { OrigenPedido } from '@/db/tipos';
 import { requerirPermiso } from '@/lib/auth/sesion';
 import { aNumero, aTexto, hoyTexto } from '@/lib/formulario';
@@ -83,9 +83,8 @@ function normalizarEntrante(bruto: unknown): PedidoEntrante | null {
 /**
  * Da de alta un lote de pedidos para un cliente.
  *
- * Las guías se numeran de forma correlativa dentro del día. El contador se lee una
- * sola vez y se incrementa en memoria: preguntar por cada pedido sería absurdo y,
- * dentro de la transacción, todas las filas ven el mismo estado inicial.
+ * Cada pedido recibe una guía aleatoria (`guiaNueva`), no correlativa: la guía es
+ * lo único que pide la página pública de rastreo.
  */
 async function insertarPedidos(
   pedidos: PedidoEntrante[],
@@ -100,13 +99,12 @@ async function insertarPedidos(
   );
   if (!cliente) return 0;
 
-  const prefijo = `TR-${hoyTexto().replace(/-/g, '')}-`;
-  let contador = await siguienteNumeroDeGuia(prefijo);
+  const hoy = hoyTexto();
   let creados = 0;
 
   await transaccion(async () => {
     for (const p of pedidos) {
-      const guia = `${prefijo}${String(contador++).padStart(5, '0')}`;
+      const guia = await guiaNueva(hoy);
 
       // El flete sale de la tarifa del cliente. Si el mensaje no decía el peso, se
       // usa el mínimo facturable; el peso real se ajusta al pesar el paquete.

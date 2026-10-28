@@ -4,6 +4,7 @@ import { Card, CardCuerpo } from '@/components/ui/Card';
 import { IconoBuscar, IconoCaja, IconoCheck, IconoReloj } from '@/components/ui/Iconos';
 import { buscarPorGuia, novedadesDeEnvio } from '@/db/queries/despachos';
 import { identidad } from '@/db/queries/configuracion';
+import { claveIp, LIMITES, minutosDeBloqueo, registrarFallo } from '@/lib/auth/limites';
 import { etiqueta, fecha, fechaHora, hora } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
@@ -56,9 +57,20 @@ export default async function PaginaRastrear({
   searchParams: Promise<Parametros>;
 }) {
   const sp = await searchParams;
-  const guia = primero(sp.guia).trim();
+  const guia = primero(sp.guia).trim().slice(0, 40);
 
-  const envio = guia ? await buscarPorGuia(guia) : null;
+  // La página es pública y la guía es lo único que pide, así que se limita cuántas
+  // guías inexistentes puede probar una misma IP. Mientras dura el bloqueo no se
+  // busca nada: si se siguieran enseñando los aciertos, el límite no frenaría a
+  // quien va recorriendo números.
+  // Sin IP (sin proxy delante) no se cuenta: ver `claveIp`.
+  const porIp = guia ? await claveIp('rastreo') : null;
+  const espera = porIp
+    ? await minutosDeBloqueo([{ clave: porIp, limite: LIMITES.rastreoIp }])
+    : 0;
+
+  const envio = guia && espera === 0 ? await buscarPorGuia(guia) : null;
+  if (porIp && espera === 0 && !envio) await registrarFallo([porIp]);
   const novedades = envio ? await novedadesDeEnvio(envio.id) : [];
   const actual = envio ? pasoActual(envio.estado) : -1;
 
@@ -86,7 +98,7 @@ export default async function PaginaRastrear({
               <input
                 name="guia"
                 defaultValue={guia}
-                placeholder="TR-20260913-02945"
+                placeholder="TR-20261024-7KQ4MX"
                 autoComplete="off"
                 autoCapitalize="characters"
                 className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-600"
@@ -103,7 +115,25 @@ export default async function PaginaRastrear({
         </CardCuerpo>
       </Card>
 
-      {guia && !envio ? (
+      {espera > 0 ? (
+        <Card className="mt-4">
+          <CardCuerpo>
+            <div role="alert" className="flex flex-col items-center gap-2 py-4 text-center">
+              <span className="rounded-full bg-slate-800/70 p-3 text-slate-500">
+                <IconoReloj width={22} height={22} />
+              </span>
+              <p className="text-sm font-medium text-slate-300">Demasiadas consultas sin resultado</p>
+              <p className="max-w-sm text-xs text-slate-500">
+                Por seguridad, espera {espera} {espera === 1 ? 'minuto' : 'minutos'} antes de volver
+                a consultar. Si necesitas ayuda con tu envío, comunícate con nosotros al{' '}
+                {marca.telefono}.
+              </p>
+            </div>
+          </CardCuerpo>
+        </Card>
+      ) : null}
+
+      {guia && espera === 0 && !envio ? (
         <Card className="mt-4">
           <CardCuerpo className="flex flex-col items-center gap-2 py-8 text-center">
             <span className="rounded-full bg-slate-800/70 p-3 text-slate-500">

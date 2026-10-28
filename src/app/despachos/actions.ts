@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { all, escalar, get, run, transaccion } from '@/db/client';
+import { guiaNueva } from '@/db/queries/pedidos';
 import { empresa, parametros } from '@/config/empresa';
 import { requerirParadaPropia, requerirPermiso } from '@/lib/auth/sesion';
 import { aCoordenada, aNumero, aTexto } from '@/lib/formulario';
@@ -184,7 +185,7 @@ export async function crearDespacho(formData: FormData): Promise<void> {
            destinatario_tel, direccion, ciudad, zona, peso_kg, volumen_m3, valor_declarado,
            flete, estado, fecha_compromiso, origen, created_at)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14, 'pendiente', $15, 'ruta', $16)`,
-        `TR-${fecha.replace(/-/g, '')}-${String(Date.now()).slice(-6)}${i}`,
+        await guiaNueva(fecha),
         clienteId,
         rutaId,
         paradaId,
