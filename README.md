@@ -671,10 +671,10 @@ npm run verificar-permisos  # cada rol entra exactamente donde le toca
 npm run verificar-mi-ruta   # el conductor entrega con foto, y no puede tocar lo ajeno
 npm run verificar-pedidos   # el analizador de chats y el circuito del buzón
 npm run verificar-usuarios  # crear cuentas, entrar con ellas y los frenos de administración
+npm run verificar-altas     # alta de clientes, unidades y conductores, duplicados y permisos
 npm run verificar-arranque  # el primer administrador, sobre una base sin ninguna cuenta
 npm run verificar-contraste # que ningún texto quede ilegible en claro ni en oscuro
 npm run verificar-marca     # que el nombre y el logo se cambien y lleguen a todas partes
-npm run verificar-altas     # alta de clientes, unidades y conductores, duplicados y permisos
 ```
 
 `verificar-permisos`, `verificar-mi-ruta`, `verificar-pedidos` y `verificar-usuarios`

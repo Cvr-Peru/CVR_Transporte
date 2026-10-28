@@ -20,10 +20,10 @@
     "verificar-mi-ruta": "node scripts/verificar-mi-ruta.ts",
     "verificar-pedidos": "node scripts/verificar-pedidos.ts",
     "verificar-usuarios": "node scripts/verificar-usuarios.ts",
+    "verificar-altas": "node scripts/verificar-altas.ts",
     "verificar-arranque": "node scripts/verificar-arranque.ts",
     "verificar-contraste": "node scripts/verificar-contraste.ts",
     "verificar-marca": "node scripts/verificar-marca.ts",
-    "verificar-altas": "node scripts/verificar-altas.ts",
     "iconos": "node scripts/generar-iconos.ts",
     "typecheck": "tsc --noEmit"
   },
