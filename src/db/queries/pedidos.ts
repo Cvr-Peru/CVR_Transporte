@@ -7,6 +7,7 @@
  */
 import { all, escalar, get } from '@/db/client';
 import type { Envio } from '@/db/tipos';
+import { generarGuia } from '@/lib/guias';
 
 /** En qué punto del camino está un pedido. */
 export type SituacionPedido = 'sin_asignar' | 'en_ruta' | 'resuelto';
@@ -130,20 +131,21 @@ export async function clientesParaPedidos(): Promise<
 }
 
 /**
- * Siguiente número de guía del día.
+ * Una guía nueva para la fecha dada, que no exista todavía.
  *
- * El contador sale del mayor que haya con ese prefijo, así que las guías de un
- * mismo día quedan correlativas y legibles. Se calcula una vez y se incrementa en
- * memoria al crear un lote: consultar por cada pedido sería absurdo.
+ * Es aleatoria a propósito (ver `src/lib/guias.ts`): una guía correlativa permitía
+ * recorrer en la página pública los envíos de todos los clientes. Que salga una
+ * repetida es casi imposible, pero la columna es `UNIQUE` y un choque tumbaría el
+ * lote entero, así que se comprueba. Dentro de una transacción la consulta ve
+ * también las guías que el mismo lote acaba de insertar.
  */
-export async function siguienteNumeroDeGuia(prefijo: string): Promise<number> {
-  const fila = await get<{ ultima: string | null }>(
-    'SELECT MAX(guia) AS ultima FROM envios WHERE guia LIKE $1',
-    `${prefijo}%`,
-  );
-
-  const ultimo = fila?.ultima ? Number.parseInt(fila.ultima.slice(prefijo.length), 10) : 0;
-  return (Number.isFinite(ultimo) ? ultimo : 0) + 1;
+export async function guiaNueva(fechaISO: string): Promise<string> {
+  for (let intento = 0; intento < 5; intento++) {
+    const guia = generarGuia(fechaISO);
+    const existe = await get<{ id: number }>('SELECT id FROM envios WHERE guia = $1', guia);
+    if (!existe) return guia;
+  }
+  throw new Error('No se pudo generar un número de guía libre.');
 }
 
 /** Totales para la cabecera del buzón. */

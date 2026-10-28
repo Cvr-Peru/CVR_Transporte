@@ -41,6 +41,7 @@ import {
 import { generarSal, hashClave } from '../src/lib/auth/claves.ts';
 import { CLAVE_DEMO, CUENTAS_DEMO } from '../src/lib/auth/demo.ts';
 import { empresa } from '../src/config/empresa.ts';
+import { generarGuia } from '../src/lib/guias.ts';
 // Los distritos de Lima viven en un único sitio (`src/lib/zonas.ts`) para que el
 // generador de datos y la aplicación no se desincronicen.
 import { ZONAS } from '../src/lib/zonas.ts';
@@ -67,6 +68,11 @@ const entero = (min: number, max: number) => Math.floor(entre(min, max + 1));
 const elegir = <T>(arr: readonly T[]): T => arr[Math.floor(rnd() * arr.length)];
 const azar = (probabilidad: number) => rnd() < probabilidad;
 const red = (n: number, d = 2) => Math.round(n * 10 ** d) / 10 ** d;
+
+// Las guías llevan una parte aleatoria (ver `src/lib/guias.ts`). Salen de un
+// generador propio, con su semilla, para no consumir llamadas de `rnd`: cambiar
+// el orden de esas llamadas cambiaría todos los datos de ejemplo.
+const rndGuias = mulberry32(20261024);
 
 const ALFABETO = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 /** Tres letras de placa (base 26) a partir de un entero de 0 a 17 575. */
@@ -446,7 +452,6 @@ await transaccion(async () => {
   // ─────────────────────────────────────────────────────────────
   // 4. Rutas, paradas y envíos
   // ─────────────────────────────────────────────────────────────
-  let contadorGuia = 0;
   const rutasCreadas: { id: number; fecha: string; unidadId: number | null; conductorId: number | null; estado: string; ingresos: number; km: number }[] = [];
 
   const ESTADOS_RUTA_PASADO = ['completado', 'completado', 'completado', 'completado', 'completado', 'cancelado'];
@@ -536,7 +541,6 @@ await transaccion(async () => {
       // 1 a 3 envíos por parada
       const numEnvios = entero(1, 3);
       for (let e = 0; e < numEnvios; e++) {
-        contadorGuia++;
         const clienteId = elegir(idsClientes);
         const tarifa = tarifasPorCliente.get(clienteId)!;
         const peso = red(entre(0.4, unidad.capKg / 12), 2);
@@ -571,7 +575,7 @@ await transaccion(async () => {
           `INSERT INTO envios (guia, cliente_id, ruta_id, parada_id, remitente, destinatario, destinatario_tel, direccion,
             ciudad, zona, peso_kg, volumen_m3, valor_declarado, flete, estado, fecha_compromiso, fecha_entrega, receptor, intentos, created_at)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20) RETURNING id`,
-          `TR-${aISO(fecha).replace(/-/g, '')}-${String(contadorGuia).padStart(5, '0')}`,
+          generarGuia(aISO(fecha), rndGuias),
           clienteId, id, paradaId,
           CLIENTES_BASE[idsClientes.indexOf(clienteId)]?.nombre ?? 'Remitente',
           destinatario,
@@ -738,7 +742,6 @@ await transaccion(async () => {
   // vacío en la demostración, porque todo lo anterior nace ya dentro de un
   // despacho.
   for (let i = 0; i < 16; i++) {
-    contadorGuia++;
     const clienteId = elegir(idsClientes);
     const tarifa = tarifasPorCliente.get(clienteId)!;
     const zona = elegir(ZONAS);
@@ -751,7 +754,7 @@ await transaccion(async () => {
          ciudad, zona, peso_kg, volumen_m3, valor_declarado, flete, estado, fecha_compromiso,
          origen, cobro_entrega, bultos, notas, created_at)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'pendiente',$13,$14,$15,$16,$17,$18) RETURNING id`,
-      `TR-${aISO(HOY).replace(/-/g, '')}-${String(contadorGuia).padStart(5, '0')}`,
+      generarGuia(aISO(HOY), rndGuias),
       clienteId,
       CLIENTES_BASE[idsClientes.indexOf(clienteId)]?.nombre ?? 'Remitente',
       destinatario,
@@ -854,7 +857,6 @@ await transaccion(async () => {
   // ─────────────────────────────────────────────────────────────
   // 7. Facturación: se agrupan los envíos entregados por cliente y mes
   // ─────────────────────────────────────────────────────────────
-  contadorGuia = 0;
   let numeroFactura = 1;
   for (let mesAtras = 3; mesAtras >= 0; mesAtras--) {
     const ref = new Date(HOY.getFullYear(), HOY.getMonth() - mesAtras, 1);

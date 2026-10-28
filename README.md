@@ -540,6 +540,12 @@ conecta a un geocodificador.
 Solo el personal. **El cliente final no necesita cuenta**: consulta dónde va su paquete en
 `/rastrear`, que es una página pública y no muestra información interna.
 
+Como la guía es lo único que pide esa página, **no es correlativa**: tiene la forma
+`TR-20261024-7KQ4MX`, la fecha más seis caracteres al azar (unos 887 millones de
+combinaciones por día). Con las guías correlativas de antes bastaba con ir sumando uno
+para recorrer los envíos de todos los clientes. Además, una misma IP solo puede consultar
+20 guías inexistentes cada 15 minutos. Las guías que ya existían conservan su número.
+
 ### Los cuatro roles
 
 | Rol | Qué puede hacer |
@@ -626,6 +632,14 @@ comandos queda en el historial del shell y a la vista de cualquiera.
   en el menú. Las acciones de servidor se pueden invocar directamente, así que ocultar un
   botón no protege nada por sí solo.
 - Al cambiar una contraseña o desactivar a alguien **se cierran todas sus sesiones**.
+- **Límite de intentos fallidos** (`src/lib/auth/limites.ts`): 5 contraseñas equivocadas
+  para un mismo correo, o 30 desde una misma IP, bloquean el acceso 15 minutos. Mientras
+  dura el bloqueo no se comprueba la contraseña, así que tampoco sirve para cargar el
+  servidor. Entrar bien borra los fallos de ese correo. Los contadores viven en la base de
+  datos (tabla `intentos_fallidos`), así que valen igual con varias réplicas. Dos cosas a
+  saber: quien conozca un correo puede bloquearlo unos minutos fallando a propósito (es el
+  compromiso habitual), y la IP sale de `X-Forwarded-For`, que pone el proxy de Railway;
+  sin proxy delante no se cuenta por IP y solo actúa el límite por correo.
 
 ### Accesos de demostración
 
@@ -668,6 +682,7 @@ npm run verificar-usuarios  # crear cuentas, entrar con ellas y los frenos de ad
 npm run verificar-arranque  # el primer administrador, sobre una base sin ninguna cuenta
 npm run verificar-contraste # que ningún texto quede ilegible en claro ni en oscuro
 npm run verificar-marca     # que el nombre y el logo se cambien y lleguen a todas partes
+npm run verificar-limites   # guías no correlativas y límite de intentos en acceso y rastreo
 ```
 
 `verificar-permisos`, `verificar-mi-ruta`, `verificar-pedidos` y `verificar-usuarios`

@@ -3,6 +3,14 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { autenticar, cerrarSesion, iniciarSesion } from '@/lib/auth/sesion';
+import {
+  claveCorreo,
+  claveIp,
+  LIMITES,
+  minutosDeBloqueo,
+  olvidarFallos,
+  registrarFallo,
+} from '@/lib/auth/limites';
 import { moduloDeRuta, puede, rutaInicio, type Rol } from '@/lib/auth/permisos';
 
 /**
@@ -45,12 +53,31 @@ export async function entrar(formData: FormData): Promise<void> {
     redirect(`/entrar?error=faltan&volver=${encodeURIComponent(volver)}`);
   }
 
+  // El freno va antes de comprobar la contraseña: mientras dura el bloqueo no se
+  // calcula ningún scrypt, así que tampoco sirve para cargar el servidor. Y se
+  // responde igual exista el correo o no (ver `src/lib/auth/limites.ts`).
+  const porCorreo = claveCorreo(email);
+  const porIp = await claveIp('acceso');
+  const espera = await minutosDeBloqueo([
+    { clave: porCorreo, limite: LIMITES.accesoCorreo },
+    ...(porIp ? [{ clave: porIp, limite: LIMITES.accesoIp }] : []),
+  ]);
+  if (espera > 0) {
+    redirect(`/entrar?error=bloqueo&minutos=${espera}&volver=${encodeURIComponent(volver)}`);
+  }
+
   const resultado = await autenticar(email, clave);
 
   if (!resultado.ok) {
-    const codigo = resultado.motivo.includes('desactivada') ? 'inactiva' : 'credenciales';
-    redirect(`/entrar?error=${codigo}&volver=${encodeURIComponent(volver)}`);
+    // Una cuenta desactivada con la contraseña buena no es un intento de adivinarla.
+    const desactivada = resultado.motivo.includes('desactivada');
+    if (!desactivada) await registrarFallo(porIp ? [porCorreo, porIp] : [porCorreo]);
+    redirect(
+      `/entrar?error=${desactivada ? 'inactiva' : 'credenciales'}&volver=${encodeURIComponent(volver)}`,
+    );
   }
+
+  await olvidarFallos(porCorreo);
 
   const cabeceras = await headers();
   await iniciarSesion(resultado.usuarioId, cabeceras.get('user-agent'));

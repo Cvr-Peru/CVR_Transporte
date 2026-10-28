@@ -69,6 +69,13 @@ export default async function PaginaEntrar({
   const error = primero(sp.error);
   const volver = primero(sp.volver) || '/';
 
+  // El número sale de la URL, así que se acota: es solo para el texto.
+  const minutos = Math.min(60, Math.max(1, Number.parseInt(primero(sp.minutos), 10) || 15));
+  const mensajeError =
+    error === 'bloqueo'
+      ? `Demasiados intentos fallidos. Por seguridad, espera ${minutos} ${minutos === 1 ? 'minuto' : 'minutos'} antes de volver a intentarlo.`
+      : (MENSAJES[error] ?? MENSAJES.credenciales);
+
   const mostrarDemo = process.env.MOSTRAR_ACCESOS_DEMO === '1';
   const marca = await identidad();
 
@@ -96,7 +103,7 @@ export default async function PaginaEntrar({
               className="flex items-start gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-200"
             >
               <IconoAlerta width={15} height={15} className="mt-0.5 shrink-0" />
-              {MENSAJES[error] ?? MENSAJES.credenciales}
+              {mensajeError}
             </p>
           ) : null}
 

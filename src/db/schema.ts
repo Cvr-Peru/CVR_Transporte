@@ -333,6 +333,22 @@ CREATE TABLE IF NOT EXISTS sesiones (
 );
 
 -- ─────────────────────────────────────────────────────────────
+-- Intentos fallidos: freno contra quien prueba contraseñas o guías
+-- ─────────────────────────────────────────────────────────────
+-- Cada fila es un fallo: una contraseña equivocada o una guía que no existe. La
+-- clave dice de qué es el contador («acceso:correo:…», «acceso:ip:…»,
+-- «rastreo:ip:…»). Vive en la base y no en memoria para que el límite sea el
+-- mismo aunque la aplicación corra en varias réplicas. Ver
+-- «src/lib/auth/limites.ts».
+CREATE TABLE IF NOT EXISTS intentos_fallidos (
+  id      SERIAL PRIMARY KEY,
+  clave   TEXT NOT NULL,
+  momento TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_intentos_clave ON intentos_fallidos(clave, momento);
+
+-- ─────────────────────────────────────────────────────────────
 -- Prueba de entrega: la foto de quien recibe
 -- ─────────────────────────────────────────────────────────────
 -- La imagen se guarda EN LA BASE DE DATOS, no en el disco del servidor. El
@@ -433,6 +449,7 @@ CREATE INDEX IF NOT EXISTS idx_envios_sin_asignar ON envios(estado) WHERE ruta_i
 
 /** Nombres de todas las tablas, en orden de borrado seguro (hijas primero). */
 export const TABLAS_EN_ORDEN_DE_BORRADO = [
+  'intentos_fallidos',
   'sesiones',
   'usuarios',
   'novedades',
