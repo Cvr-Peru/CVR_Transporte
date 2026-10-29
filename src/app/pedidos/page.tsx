@@ -130,7 +130,7 @@ export default async function PaginaPedidos({
     listarPedidos(filtros),
     contarPedidosPorSituacion(filtros),
     resumenBuzon(),
-    clientesParaPedidos(),
+    clientesParaPedidos({ incluirInactivos: true }),
     zonasOperativas(),
   ]);
 

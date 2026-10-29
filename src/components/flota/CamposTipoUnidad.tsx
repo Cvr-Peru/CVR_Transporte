@@ -24,11 +24,30 @@ function valoresDe(tipo: TipoUnidad): Record<Campo, string> {
  * furgoneta, cambiar de tipo no se la pisa. Sin JavaScript el formulario sigue
  * funcionando con los valores de la furgoneta, que es el tipo por defecto (el más
  * común en reparto urbano).
+ *
+ * Al editar llega `inicial` con los valores de la unidad. Son datos reales, no
+ * sugerencias, así que cuentan como ya tocados: cambiar el tipo no los pisa.
  */
-export function CamposTipoUnidad({ invalido }: { invalido?: string }) {
-  const [tipo, setTipo] = useState<TipoUnidad>('furgoneta');
-  const [valores, setValores] = useState(() => valoresDe('furgoneta'));
-  const [tocados, setTocados] = useState<Set<Campo>>(new Set());
+export function CamposTipoUnidad({
+  invalido,
+  inicial,
+}: {
+  invalido?: string;
+  inicial?: { tipo: TipoUnidad; capacidadKg: number; capacidadM3: number; rendimiento: number };
+}) {
+  const [tipo, setTipo] = useState<TipoUnidad>(inicial?.tipo ?? 'furgoneta');
+  const [valores, setValores] = useState<Record<Campo, string>>(() =>
+    inicial
+      ? {
+          capacidadKg: String(inicial.capacidadKg),
+          capacidadM3: String(inicial.capacidadM3),
+          rendimiento: String(inicial.rendimiento),
+        }
+      : valoresDe('furgoneta'),
+  );
+  const [tocados, setTocados] = useState<Set<Campo>>(
+    () => new Set(inicial ? (['capacidadKg', 'capacidadM3', 'rendimiento'] as const) : []),
+  );
 
   function cambiarTipo(nuevo: TipoUnidad) {
     setTipo(nuevo);
@@ -54,7 +73,11 @@ export function CamposTipoUnidad({ invalido }: { invalido?: string }) {
         etiqueta="Tipo de unidad"
         value={tipo}
         onChange={(e) => cambiarTipo(e.target.value as TipoUnidad)}
-        ayuda="Al cambiarlo se proponen la capacidad y el rendimiento habituales de ese tipo."
+        ayuda={
+          inicial
+            ? undefined
+            : 'Al cambiarlo se proponen la capacidad y el rendimiento habituales de ese tipo.'
+        }
         invalido={invalido === 'tipo'}
       >
         {TIPOS_UNIDAD.map((t) => (

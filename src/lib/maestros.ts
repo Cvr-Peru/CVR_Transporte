@@ -79,3 +79,13 @@ export function normalizarDocumento(valor: string): string {
   const limpio = valor.toUpperCase().replace(/[\s.-]/g, '');
   return /^[0-9A-Z]{8,12}$/.test(limpio) ? limpio : '';
 }
+
+/**
+ * Identificador de un registro llegado de un formulario o de la URL: entero
+ * positivo, o `null`. El de la ficha que se edita viaja en un campo oculto, y un
+ * campo oculto se puede cambiar como cualquier otro.
+ */
+export function aId(valor: unknown): number | null {
+  const n = typeof valor === 'string' && /^\d{1,9}$/.test(valor.trim()) ? Number(valor) : NaN;
+  return Number.isInteger(n) && n > 0 ? n : null;
+}

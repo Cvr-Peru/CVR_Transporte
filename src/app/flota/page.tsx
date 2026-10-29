@@ -187,6 +187,13 @@ export default async function PaginaFlota({
     ? (await get<{ placa: string }>('SELECT placa FROM unidades WHERE placa = $1', placaCreada))?.placa
     : undefined;
 
+  // Lo mismo tras editar, dar de baja o reactivar: solo se confirma si la placa existe.
+  const cambio = (['editada', 'baja', 'reactivada'] as const).find((k) => valorUnico(sp[k]));
+  const placaCambio = cambio ? normalizarPlaca(valorUnico(sp[cambio]) ?? '') : '';
+  const cambiada = placaCambio
+    ? (await get<{ placa: string }>('SELECT placa FROM unidades WHERE placa = $1', placaCambio))?.placa
+    : undefined;
+
   const flota = await kpisUnidades();
   const documentos = await kpisDocumentos();
 
@@ -237,6 +244,17 @@ export default async function PaginaFlota({
         </AvisoExito>
       ) : null}
 
+      {cambio && cambiada ? (
+        <AvisoExito>
+          La unidad <span className="num font-medium">{cambiada}</span>{' '}
+          {cambio === 'editada'
+            ? 'quedó con los datos corregidos.'
+            : cambio === 'baja'
+              ? 'quedó fuera de servicio: ya no se ofrece al crear despachos.'
+              : 'vuelve a estar disponible para las hojas de ruta.'}
+        </AvisoExito>
+      ) : null}
+
       {/* Pestañas: enlaces que cambian el query param, sin JavaScript de cliente. */}
       <nav
         aria-label="Secciones de flota"
@@ -264,6 +282,7 @@ export default async function PaginaFlota({
 
       {tab === 'unidades' ? (
         <VistaUnidades
+          puedeEditar={puedeEditar}
           estado={valorUnico(sp.estado)}
           tipo={valorUnico(sp.tipo)}
           q={valorUnico(sp.q)}
@@ -286,7 +305,17 @@ export default async function PaginaFlota({
 // ─────────────────────────────────────────────────────────────
 // Pestaña: unidades
 // ─────────────────────────────────────────────────────────────
-async function VistaUnidades({ estado, tipo, q }: { estado?: string; tipo?: string; q?: string }) {
+async function VistaUnidades({
+  puedeEditar,
+  estado,
+  tipo,
+  q,
+}: {
+  puedeEditar: boolean;
+  estado?: string;
+  tipo?: string;
+  q?: string;
+}) {
   const estadoFiltro = unoDe(estado, ESTADOS_UNIDAD);
   const tipoFiltro = unoDe(tipo, TIPOS_UNIDAD);
   const hayFiltros = Boolean(estadoFiltro ?? tipoFiltro ?? q);
@@ -437,6 +466,13 @@ async function VistaUnidades({ estado, tipo, q }: { estado?: string; tipo?: stri
                 <Th alineacion="derecha">Rendimiento</Th>
                 <Th>Conductor fijo</Th>
                 <Th>Documentación</Th>
+                {puedeEditar ? (
+                  <Th className="relative">
+                    {/* `relative`: sin él, el texto oculto se posiciona fuera de la caja con
+                        desplazamiento de la tabla y ensancha la página en el móvil. */}
+                    <span className="sr-only">Acciones</span>
+                  </Th>
+                ) : null}
               </tr>
             </thead>
             <tbody>
@@ -487,6 +523,17 @@ async function VistaUnidades({ estado, tipo, q }: { estado?: string; tipo?: stri
                         : 'Sin documentación registrada'}
                     </span>
                   </Td>
+                  {puedeEditar ? (
+                    <Td alineacion="derecha">
+                      <Link
+                        href={`/flota/${u.id}/editar`}
+                        className="text-xs text-sky-400 hover:text-sky-300"
+                        aria-label={`Editar la unidad ${u.placa}`}
+                      >
+                        Editar
+                      </Link>
+                    </Td>
+                  ) : null}
                 </Tr>
               ))}
             </tbody>

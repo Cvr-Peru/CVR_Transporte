@@ -47,6 +47,12 @@ const ESPERADO: Record<string, Record<Rol, boolean>> = {
   // La cartera de clientes lleva tarifas y saldos: es dinero. Despacho no entra.
   '/clientes': { administracion: true, despachador: false, conductor: false, gerencia: true },
   '/clientes/nuevo': { administracion: true, despachador: false, conductor: false, gerencia: false },
+  // Corregir y dar de baja también es escritura. Gerencia consulta la lista de
+  // clientes, pero no abre su ficha de edición. Los identificadores 1 existen
+  // siempre tras `npm run seed`.
+  '/clientes/1': { administracion: true, despachador: false, conductor: false, gerencia: false },
+  '/flota/1/editar': { administracion: true, despachador: false, conductor: false, gerencia: false },
+  '/conductores/1/editar': { administracion: true, despachador: false, conductor: false, gerencia: false },
   '/finanzas': { administracion: true, despachador: false, conductor: false, gerencia: true },
   '/facturacion': { administracion: true, despachador: false, conductor: false, gerencia: true },
   '/liquidaciones': { administracion: true, despachador: false, conductor: false, gerencia: true },

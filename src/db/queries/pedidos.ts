@@ -120,12 +120,20 @@ export async function pedidosSinAsignar(limite = 200): Promise<PedidoResumen[]> 
   return listarPedidos({ situacion: 'sin_asignar', limite });
 }
 
-/** Clientes que pueden tener pedidos, con su tarifa para calcular el flete. */
-export async function clientesParaPedidos(): Promise<
+/**
+ * Clientes a los que se les puede registrar un pedido, con su tarifa para
+ * calcular el flete. Un cliente dado de baja no sale.
+ *
+ * El filtro del buzón pasa `incluirInactivos`: sus pedidos antiguos siguen ahí y
+ * tiene que poder buscarlos.
+ */
+export async function clientesParaPedidos({ incluirInactivos = false } = {}): Promise<
   { id: number; nombre: string; tarifa_base: number; tarifa_kg: number }[]
 > {
   return all<{ id: number; nombre: string; tarifa_base: number; tarifa_kg: number }>(
-    'SELECT id, nombre, tarifa_base, tarifa_kg FROM clientes ORDER BY nombre',
+    `SELECT id, nombre, tarifa_base, tarifa_kg FROM clientes
+     ${incluirInactivos ? '' : 'WHERE activo = 1'}
+     ORDER BY nombre`,
   );
 }
 

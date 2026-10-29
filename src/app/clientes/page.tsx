@@ -39,10 +39,15 @@ export default async function PaginaClientes({
 
   const sp = await searchParams;
   const creado = typeof sp.creado === 'string' ? sp.creado : null;
+  // Tras editar, dar de baja o reactivar se vuelve aquí con el código del cliente.
+  const cambio = (['editado', 'baja', 'reactivado'] as const).find((k) => typeof sp[k] === 'string');
+  const codigoCambio = cambio ? (sp[cambio] as string) : null;
 
   const hace30 = aISOCompleto(new Date(Date.now() - 30 * 86_400_000));
   const clientes = await listarClientes(hace30);
   const nuevo = creado ? clientes.find((c) => c.codigo === creado) : undefined;
+  // Como con el alta, solo se confirma un cambio sobre un cliente que exista.
+  const cambiado = codigoCambio ? clientes.find((c) => c.codigo === codigoCambio) : undefined;
   const activos = clientes.filter((c) => c.activo).length;
 
   return (
@@ -84,6 +89,17 @@ export default async function PaginaClientes({
         </AvisoExito>
       ) : null}
 
+      {cambio && cambiado ? (
+        <AvisoExito>
+          <span className="font-medium">{cambiado.nombre}</span>{' '}
+          {cambio === 'editado'
+            ? 'quedó con los datos corregidos.'
+            : cambio === 'baja'
+              ? 'quedó dado de baja: ya no sale al registrar pedidos ni al crear despachos.'
+              : 'vuelve a estar activo y ya se le pueden registrar pedidos.'}
+        </AvisoExito>
+      ) : null}
+
       <Card>
         {clientes.length === 0 ? (
           <Vacio
@@ -111,11 +127,21 @@ export default async function PaginaClientes({
                 <Th alineacion="derecha">Envíos 30 d</Th>
                 <Th alineacion="derecha">Por cobrar</Th>
                 <Th>Estado</Th>
+                {puedeEditar ? (
+                  <Th className="relative">
+                    {/* `relative`: sin él, el texto oculto se posiciona fuera de la caja con
+                        desplazamiento de la tabla y ensancha la página en el móvil. */}
+                    <span className="sr-only">Acciones</span>
+                  </Th>
+                ) : null}
               </tr>
             </thead>
             <tbody>
               {clientes.map((c) => (
-                <Tr key={c.id} className={c.codigo === creado ? 'bg-emerald-500/5' : undefined}>
+                <Tr
+                  key={c.id}
+                  className={c.codigo === creado || c.codigo === codigoCambio ? 'bg-emerald-500/5' : undefined}
+                >
                   <Td>
                     <p className="font-medium text-slate-100">{c.nombre}</p>
                     <p className="num text-xs text-slate-500">
@@ -145,6 +171,17 @@ export default async function PaginaClientes({
                   <Td>
                     <Badge tono={c.activo ? 'exito' : 'neutro'}>{c.activo ? 'Activo' : 'Inactivo'}</Badge>
                   </Td>
+                  {puedeEditar ? (
+                    <Td alineacion="derecha">
+                      <Link
+                        href={`/clientes/${c.id}`}
+                        className="text-xs text-sky-400 hover:text-sky-300"
+                        aria-label={`Editar ${c.nombre}`}
+                      >
+                        Editar
+                      </Link>
+                    </Td>
+                  ) : null}
                 </Tr>
               ))}
             </tbody>

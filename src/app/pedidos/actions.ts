@@ -95,7 +95,9 @@ async function insertarPedidos(
   usuarioId: number,
 ): Promise<number> {
   const cliente = await get<{ nombre: string; tarifa_base: number; tarifa_kg: number }>(
-    'SELECT nombre, tarifa_base, tarifa_kg FROM clientes WHERE id = $1',
+    // Solo clientes activos: uno dado de baja ya no se ofrece, y tampoco se acepta
+    // si alguien envía su identificador a mano.
+    'SELECT nombre, tarifa_base, tarifa_kg FROM clientes WHERE id = $1 AND activo = 1',
     clienteId,
   );
   if (!cliente) return 0;

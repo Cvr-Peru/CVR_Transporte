@@ -60,6 +60,10 @@ const INTERNAS: Caso[] = [
   { ruta: '/flota/nueva', debeContener: 'Nueva unidad', descripcion: 'Alta de unidad' },
   { ruta: '/clientes', debeContener: 'Clientes', descripcion: 'Clientes' },
   { ruta: '/clientes/nuevo', debeContener: 'Nuevo cliente', descripcion: 'Alta de cliente' },
+  // Los identificadores 1 existen siempre tras `npm run seed`.
+  { ruta: '/clientes/1', debeContener: 'Ficha del cliente', descripcion: 'Edición de cliente' },
+  { ruta: '/flota/1/editar', debeContener: 'Ficha de la unidad', descripcion: 'Edición de unidad' },
+  { ruta: '/conductores/1/editar', debeContener: 'Ficha del conductor', descripcion: 'Edición de conductor' },
   { ruta: '/finanzas', debeContener: 'rentabilidad', descripcion: 'Costos y rentabilidad' },
   { ruta: '/facturacion', debeContener: 'Facturación', descripcion: 'Facturación' },
   { ruta: '/liquidaciones', debeContener: 'Liquidaciones', descripcion: 'Liquidaciones' },

@@ -78,6 +78,16 @@ export default async function PaginaConductores({
       )
     : null;
 
+  // Tras editar, dar de baja o reactivar se vuelve aquí con el código del conductor.
+  const cambio = (['editado', 'baja', 'reactivado'] as const).find((k) => texto(sp, k));
+  const codigoCambio = cambio ? texto(sp, cambio) : undefined;
+  const cambiado = codigoCambio
+    ? await get<{ codigo: string; nombre: string }>(
+        'SELECT codigo, nombre FROM conductores WHERE codigo = $1',
+        codigoCambio,
+      )
+    : null;
+
   const rango = rangoMes();
   const kpis = await kpisConductores();
   const conductores = await listarConductores(
@@ -150,6 +160,17 @@ export default async function PaginaConductores({
         >
           <span className="font-medium">{creado.nombre}</span> quedó en la plantilla como{' '}
           <span className="num">{creado.codigo}</span> y ya se le pueden asignar rutas.
+        </AvisoExito>
+      ) : null}
+
+      {cambio && cambiado ? (
+        <AvisoExito>
+          <span className="font-medium">{cambiado.nombre}</span>{' '}
+          {cambio === 'editado'
+            ? 'quedó con los datos corregidos.'
+            : cambio === 'baja'
+              ? 'quedó inactivo: ya no se le ofrecen hojas de ruta.'
+              : 'vuelve a estar activo y ya se le pueden asignar rutas.'}
         </AvisoExito>
       ) : null}
 
@@ -385,7 +406,7 @@ export default async function PaginaConductores({
               </thead>
               <tbody>
                 {conductores.map((c) => (
-                  <FilaConductor key={c.id} conductor={c} />
+                  <FilaConductor key={c.id} conductor={c} puedeEditar={puedeEditar} />
                 ))}
               </tbody>
             </TablaCaja>
@@ -407,7 +428,13 @@ export default async function PaginaConductores({
 }
 
 /** Fila de la plantilla. Se aísla para poder calcular el semáforo por fila. */
-function FilaConductor({ conductor: c }: { conductor: ConductorDesempeno }) {
+function FilaConductor({
+  conductor: c,
+  puedeEditar,
+}: {
+  conductor: ConductorDesempeno;
+  puedeEditar: boolean;
+}) {
   const licencia = estadoVencimiento(c.licencia_vencimiento);
   const sinLicencia = !c.licencia_vencimiento;
   const contratista = c.tipo_vinculacion === 'contratista';
@@ -487,12 +514,23 @@ function FilaConductor({ conductor: c }: { conductor: ConductorDesempeno }) {
         )}
       </Td>
       <Td alineacion="derecha">
-        <Link
-          href={`/liquidaciones?conductor=${c.id}`}
-          className="text-xs text-sky-400 hover:text-sky-300"
-        >
-          Liquidaciones →
-        </Link>
+        <div className="flex items-center justify-end gap-3 whitespace-nowrap">
+          {puedeEditar ? (
+            <Link
+              href={`/conductores/${c.id}/editar`}
+              className="text-xs text-sky-400 hover:text-sky-300"
+              aria-label={`Editar a ${c.nombre}`}
+            >
+              Editar
+            </Link>
+          ) : null}
+          <Link
+            href={`/liquidaciones?conductor=${c.id}`}
+            className="text-xs text-sky-400 hover:text-sky-300"
+          >
+            Liquidaciones →
+          </Link>
+        </div>
       </Td>
     </Tr>
   );

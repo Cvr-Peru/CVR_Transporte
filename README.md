@@ -53,9 +53,9 @@ está vacía, para no borrar los datos que ya haya (importante al desplegar).
 | **Despachos** | `/despachos` | Hojas de ruta: creación, asignación de unidad y conductor, avance de paradas, prueba de entrega, foto de quien recibe y novedades |
 | **Mi ruta** | `/mi-ruta` | La pantalla del conductor en el móvil: la parada siguiente en grande, botones para entregar o abrir novedad, la foto de quien recibe, navegación al domicilio y GPS, todo en la misma pantalla |
 | **Rastreo** | `/rastreo` | Mapa en vivo de la flota, trayectorias, rastreo de una guía concreta y avance simulado de la operación |
-| **Flota** | `/flota` | Parque automotor, alta de unidades, vencimiento de SOAT, revisión técnico-mecánica y seguros, e historial de mantenimiento |
-| **Conductores** | `/conductores` | Plantilla, alta de conductores, vigencia de licencias, desempeño del mes y comisiones |
-| **Clientes** | `/clientes` | Cartera de clientes y su alta: tarifa con la que se calcula el flete, plazo de pago, envíos del mes y saldo por cobrar. Solo la gestiona Administración; Gerencia la consulta |
+| **Flota** | `/flota` | Parque automotor, alta, edición y baja de unidades, vencimiento de SOAT, revisión técnico-mecánica y seguros, e historial de mantenimiento |
+| **Conductores** | `/conductores` | Plantilla, alta, edición y baja de conductores, vigencia de licencias, desempeño del mes y comisiones |
+| **Clientes** | `/clientes` | Cartera de clientes, su alta, edición y baja: tarifa con la que se calcula el flete, plazo de pago, envíos del mes y saldo por cobrar. Solo la gestiona Administración; Gerencia la consulta |
 | **Costos y rentabilidad** | `/finanzas` | Combustible y rendimiento real por unidad, gastos por categoría, y margen por ruta y por unidad |
 | **Facturación** | `/facturacion` | Facturas, cartera, antigüedad de saldos y gestión de cobro |
 | **Liquidaciones** | `/liquidaciones` | Cálculo y pago de comisiones y salarios de los conductores |
@@ -274,9 +274,14 @@ y su logo. El resto del equipo lo das de alta en `/usuarios`.
 Lo que la empresa opera también se da de alta desde la aplicación: sus clientes en
 `/clientes/nuevo`, sus unidades en `/flota/nueva` y sus conductores en
 `/conductores/nuevo`. Si un formulario necesita algo que todavía no existe —un pedido sin
-ningún cliente, por ejemplo— la pantalla lo dice y lleva al alta que falta. Hoy solo hay
-**alta**: corregir o dar de baja un cliente, una unidad o un conductor todavía no se puede
-hacer desde la pantalla.
+ningún cliente, por ejemplo— la pantalla lo dice y lleva al alta que falta.
+
+Cada listado tiene un enlace **Editar** (solo para quien puede editar ese módulo) que abre
+la misma ficha del alta para corregirla. Al pie de la ficha está la **baja**, que pide
+confirmación y nunca borra, porque facturas, rutas y envíos siguen apuntando al registro:
+un cliente queda inactivo y deja de salir en pedidos y despachos; una unidad pasa a «fuera
+de servicio» y un conductor a «inactivo». Una unidad o un conductor con una ruta en curso no
+se pueden dar de baja hasta cerrarla o reasignarla. Todo se puede reactivar.
 
 ---
 
@@ -672,6 +677,7 @@ npm run verificar-mi-ruta   # el conductor entrega con foto, y no puede tocar lo
 npm run verificar-pedidos   # el analizador de chats y el circuito del buzón
 npm run verificar-usuarios  # crear cuentas, entrar con ellas y los frenos de administración
 npm run verificar-altas     # alta de clientes, unidades y conductores, duplicados y permisos
+npm run verificar-ediciones # edición y baja de los mismos, duplicados, permisos y rutas en curso
 npm run verificar-arranque  # el primer administrador, sobre una base sin ninguna cuenta
 npm run verificar-contraste # que ningún texto quede ilegible en claro ni en oscuro
 npm run verificar-marca     # que el nombre y el logo se cambien y lleguen a todas partes

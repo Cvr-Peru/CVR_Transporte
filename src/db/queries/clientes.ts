@@ -5,7 +5,7 @@
  * no había pantalla para verlos ni para dar de alta uno. En una instalación real,
  * sin clientes no se puede registrar ni un pedido.
  */
-import { all, escalar } from '@/db/client';
+import { all, escalar, get } from '@/db/client';
 import type { Cliente } from '@/db/tipos';
 
 export interface ClienteResumen extends Cliente {
@@ -34,12 +34,21 @@ export async function listarClientes(desde30d: string): Promise<ClienteResumen[]
   }));
 }
 
-/** ¿Hay ya un cliente con ese identificador fiscal? Se ignoran guiones y espacios. */
-export async function existeIdFiscal(idFiscal: string): Promise<boolean> {
+/**
+ * ¿Hay ya otro cliente con ese identificador fiscal? Se ignoran guiones y espacios.
+ * Al editar se pasa el propio cliente en `excluirId`: conservar su RUC no es un duplicado.
+ */
+export async function existeIdFiscal(idFiscal: string, excluirId: number | null = null): Promise<boolean> {
   const n = await escalar<number>(
     `SELECT COUNT(*) FROM clientes
-     WHERE REPLACE(REPLACE(id_fiscal, '-', ''), ' ', '') = $1`,
+     WHERE REPLACE(REPLACE(id_fiscal, '-', ''), ' ', '') = $1 AND id <> $2`,
     idFiscal.replace(/[-\s]/g, ''),
+    excluirId ?? 0,
   );
   return Number(n ?? 0) > 0;
+}
+
+/** Ficha de un cliente para editarla. */
+export async function obtenerCliente(id: number): Promise<Cliente | null> {
+  return get<Cliente>('SELECT * FROM clientes WHERE id = $1', id);
 }

@@ -117,7 +117,8 @@ export async function crearDespacho(formData: FormData): Promise<void> {
   if (!zona || !clienteId) return;
 
   const tarifa = await get<{ tarifa_base: number; tarifa_kg: number; nombre: string }>(
-    'SELECT tarifa_base, tarifa_kg, nombre FROM clientes WHERE id = $1',
+    // Un cliente dado de baja no recibe despachos nuevos (ver `clientesActivos`).
+    'SELECT tarifa_base, tarifa_kg, nombre FROM clientes WHERE id = $1 AND activo = 1',
     clienteId,
   );
   if (!tarifa) return;
@@ -126,8 +127,15 @@ export async function crearDespacho(formData: FormData): Promise<void> {
   const codigo = `RUT-${fecha.replace(/-/g, '')}-${String(Number(totalRutas) + 1).padStart(4, '0')}`;
 
   const unidad = unidadId
-    ? await get<{ km_actual: number }>('SELECT km_actual FROM unidades WHERE id = $1', unidadId)
+    ? await get<{ km_actual: number }>(
+        "SELECT km_actual FROM unidades WHERE id = $1 AND estado <> 'fuera_servicio'",
+        unidadId,
+      )
     : null;
+  // Una unidad o un conductor dados de baja no se ofrecen en el formulario; si
+  // llegan igual (enviado a mano), no se crea la ruta.
+  if (unidadId && !unidad) return;
+  if (conductorId && !(await recursoAsignable('conductor', conductorId))) return;
 
   await transaccion(async () => {
     const { id: rutaId } = await run(
@@ -208,6 +216,15 @@ export async function crearDespacho(formData: FormData): Promise<void> {
 // ─────────────────────────────────────────────────────────────
 // Asignación de recursos y ciclo de vida de la ruta
 // ─────────────────────────────────────────────────────────────
+/** ¿Existe y no está dado de baja? (unidad fuera de servicio, conductor inactivo). */
+async function recursoAsignable(recurso: 'unidad' | 'conductor', id: number): Promise<boolean> {
+  const fila =
+    recurso === 'unidad'
+      ? await get<{ id: number }>("SELECT id FROM unidades WHERE id = $1 AND estado <> 'fuera_servicio'", id)
+      : await get<{ id: number }>("SELECT id FROM conductores WHERE id = $1 AND estado <> 'inactivo'", id);
+  return fila !== null;
+}
+
 /** Cambia la unidad y el conductor asignados a una ruta planificada. */
 export async function reasignarRecursos(formData: FormData): Promise<void> {
   await requerirPermiso('despachos', 'editar');
@@ -218,11 +235,16 @@ export async function reasignarRecursos(formData: FormData): Promise<void> {
   const unidadId = aNumero(formData.get('unidadId'));
   const conductorId = aNumero(formData.get('conductorId'));
 
-  const ruta = await get<{ estado: string; unidad_id: number | null }>(
-    'SELECT estado, unidad_id FROM rutas WHERE id = $1',
+  const ruta = await get<{ estado: string; unidad_id: number | null; conductor_id: number | null }>(
+    'SELECT estado, unidad_id, conductor_id FROM rutas WHERE id = $1',
     rutaId,
   );
   if (!ruta || ruta.estado === 'completado' || ruta.estado === 'cancelado') return;
+  // Lo nuevo tiene que estar en activo; lo que la ruta ya tenía se puede conservar,
+  // para poder cambiar solo uno de los dos.
+  if (unidadId && unidadId !== ruta.unidad_id && !(await recursoAsignable('unidad', unidadId))) return;
+  if (conductorId && conductorId !== ruta.conductor_id && !(await recursoAsignable('conductor', conductorId)))
+    return;
 
   await transaccion(async () => {
     // Liberar la unidad anterior si ya no queda ninguna ruta activa con ella.
